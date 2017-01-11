@@ -115,7 +115,7 @@ $(BINDIR)/conversion-gen: cmd/libs/go2idl/conversion-gen
 # Some prereq stuff
 ###################
 .init: $(scBuildImageTarget) glide.yaml
-	$(DOCKER_CMD) glide install --strip-vendor
+#	$(DOCKER_CMD) glide install --strip-vendor
 	touch $@
 
 .scBuildImage: build/build-image/Dockerfile
