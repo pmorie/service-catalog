@@ -116,6 +116,7 @@ $(BINDIR)/conversion-gen: cmd/libs/go2idl/conversion-gen
 	  $(SC_PKG)/vendor/k8s.io/kubernetes/pkg/runtime \
 	  -O zz_generated.conversion
 	  # the previous three directories will be changed from kubernetes to apimachinery in the future
+	$(DOCKER_CMD) $(ROOT)hack/update-codecgen.sh
 	  touch $@
 
 # Some prereq stuff
