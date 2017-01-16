@@ -247,23 +247,23 @@ var catalogGroups = map[string]testapi.TestGroup{
 	"servicecatalog": serviceCatalogAPIGroup(),
 }
 
-// func TestRoundTripTypes(t *testing.T) {
-// 	for groupKey, group := range catalogGroups {
-// 		for kind := range group.InternalTypes() {
-// 			t.Logf("working on %v in %v", kind, groupKey)
-// 			if nonRoundTrippableTypes.Has(kind) {
-// 				continue
-// 			}
-// 			// Try a few times, since runTest uses random values.
-// 			for i := 0; i < *fuzzIters; i++ {
-// 				doRoundTripTest(group, kind, t)
-// 				if t.Failed() {
-// 					break
-// 				}
-// 			}
-// 		}
-// 	}
-// }
+func TestRoundTripTypes(t *testing.T) {
+	for groupKey, group := range catalogGroups {
+		for kind := range group.InternalTypes() {
+			t.Logf("working on %v in %v", kind, groupKey)
+			if nonRoundTrippableTypes.Has(kind) {
+				continue
+			}
+			// Try a few times, since runTest uses random values.
+			for i := 0; i < *fuzzIters; i++ {
+				doRoundTripTest(group, kind, t)
+				if t.Failed() {
+					break
+				}
+			}
+		}
+	}
+}
 
 func testEncodePtr(t *testing.T) {
 	broker := &servicecatalog.Broker{
