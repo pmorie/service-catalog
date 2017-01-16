@@ -22,6 +22,9 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 )
 
+// TODO: all metadata and parametersfields need to be refactored to real
+// types; skipping for now to get very large generation PR in.
+
 // +nonNamespaced=true
 
 // Broker represents an entity that provides ServiceClasses for use in the

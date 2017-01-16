@@ -86,11 +86,12 @@ func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
 	}
 	client := openservicebroker.NewClient(broker)
 
+	// TODO: uncomment parameters line once parameters types are refactored.
 	// Make the request to instantiate.
 	createReq := &brokerapi.ServiceInstanceRequest{
-		ServiceID:  in.Spec.OSBServiceID,
-		PlanID:     in.Spec.OSBPlanID,
-		Parameters: in.Spec.Parameters,
+		ServiceID: in.Spec.OSBServiceID,
+		PlanID:    in.Spec.OSBPlanID,
+		// Parameters: in.Spec.Parameters,
 	}
 	_, err = client.CreateServiceInstance(in.Spec.OSBGUID, createReq)
 	return err
@@ -170,11 +171,12 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 	// Assign UUID to binding.
 	in.Spec.OSBGUID = uuid.NewV4().String()
 
+	// TODO: uncomment parameters line once parameters types are refactored.
 	// Make the request to bind.
 	createReq := &brokerapi.BindingRequest{
-		ServiceID:  instance.Spec.OSBServiceID,
-		PlanID:     instance.Spec.OSBPlanID,
-		Parameters: in.Spec.Parameters,
+		ServiceID: instance.Spec.OSBServiceID,
+		PlanID:    instance.Spec.OSBPlanID,
+		// Parameters: in.Spec.Parameters,
 	}
 	sbr, err := client.CreateServiceBinding(instance.Spec.OSBGUID, in.Spec.OSBGUID, createReq)
 
