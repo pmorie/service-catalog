@@ -16,6 +16,8 @@ limitations under the License.
 
 package brokerapi
 
+import "k8s.io/kubernetes/pkg/runtime"
+
 // Service represents a service (of which there may be many variants-- "plans")
 // offered by a service broker
 type Service struct {
@@ -27,7 +29,7 @@ type Service struct {
 	Tags           []string `json:"tags, omitempty"`
 	Requires       []string `json:"requires, omitempty"`
 
-	Metadata        interface{}   `json:"metadata, omitempty"`
-	Plans           []ServicePlan `json:"plans"`
-	DashboardClient interface{}   `json:"dashboard_client"`
+	Metadata        runtime.Object `json:"metadata, omitempty"`
+	Plans           []ServicePlan  `json:"plans"`
+	DashboardClient runtime.Object `json:"dashboard_client"`
 }
