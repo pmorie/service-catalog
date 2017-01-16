@@ -177,7 +177,7 @@ type InstanceSpec struct {
 	// ServicePlanName is the reference to the ServicePlan for this instance.
 	PlanName string
 
-	Parameters map[string]interface{}
+	Parameters map[string]runtime.Object
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
@@ -256,7 +256,7 @@ type BindingSpec struct {
 	// should be injected with the results of the binding.  Immutable.
 	AppLabelSelector metav1.LabelSelector
 
-	Parameters map[string]interface{}
+	Parameters map[string]runtime.Object
 
 	// References to objects to create
 	SecretRef                 string
