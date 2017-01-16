@@ -239,7 +239,7 @@ var nonRoundTrippableTypes = sets.NewString(
 	// object.
 	"WatchEvent",
 )
-var nonInternalRoundTrippableTypes = sets.NewString("List", "ListOptions", "ExportOptions")
+var nonInternalRoundTrippableTypes = sets.NewString("List", "ListOptions", "ExportOptions", "DeleteOptions")
 var nonRoundTrippableTypesByVersion = map[string][]string{}
 
 // based on pkg/api/testapi
