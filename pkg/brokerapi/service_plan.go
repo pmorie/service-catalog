@@ -16,15 +16,13 @@ limitations under the License.
 
 package brokerapi
 
-import "k8s.io/kubernetes/pkg/runtime"
-
 // ServicePlan is the Open Service API compatible struct for service plans.
 // It comes with with JSON struct tags to match the API spec
 type ServicePlan struct {
-	Name        string         `json:"name"`
-	ID          string         `json:"id"`
-	Description string         `json:"description"`
-	Metadata    runtime.Object `json:"metadata, omitempty"`
-	Free        bool           `json:"free, omitempty"`
-	Schemas     *Schemas       `json:"schemas, omitempty"`
+	Name        string      `json:"name"`
+	ID          string      `json:"id"`
+	Description string      `json:"description"`
+	Metadata    interface{} `json:"metadata, omitempty"`
+	Free        bool        `json:"free, omitempty"`
+	Schemas     *Schemas    `json:"schemas, omitempty"`
 }
