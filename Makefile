@@ -107,13 +107,13 @@ $(BINDIR)/conversion-gen: cmd/libs/go2idl/conversion-gen
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  --bounding-dirs github.com/kubernetes-incubator/service-catalog \
 	  -O zz_generated.deepcopy
-	$(DOCKER_CMD) $(BINDIR)/conversion-gen --v 1 --logtostderr \
+	$(DOCKER_CMD) $(BINDIR)/conversion-gen --v 5 --logtostderr \
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
-	  --extra-peer-dirs $(SC_PKG)/vendor/k8s.io/kubernetes/pkg/api,\
-	  $(SC_PKG)/vendor/k8s.io/kubernetes/pkg/api/v1,\
-	  $(SC_PKG)/vendor/k8s.io/kubernetes/pkg/apis/meta/v1,\
-	  $(SC_PKG)/vendor/k8s.io/kubernetes/pkg/conversion,\
-	  $(SC_PKG)/vendor/k8s.io/kubernetes/pkg/runtime \
+	  --extra-peer-dirs k8s.io/kubernetes/pkg/api,\
+	  k8s.io/kubernetes/pkg/api/v1,\
+	  k8s.io/kubernetes/pkg/apis/meta/v1,\
+	  k8s.io/kubernetes/pkg/conversion,\
+	  k8s.io/kubernetes/pkg/runtime \
 	  -O zz_generated.conversion
 	  # the previous three directories will be changed from kubernetes to apimachinery in the future
 	$(DOCKER_CMD) $(ROOT)hack/update-codecgen.sh
