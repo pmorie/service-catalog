@@ -118,12 +118,12 @@ func DeepCopy_servicecatalog_BindingSpec(in interface{}, out interface{}, c *con
 		}
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
-			*out = make(map[string]interface{})
+			*out = make(map[string]runtime.Object)
 			for key, val := range *in {
 				if newVal, err := c.DeepCopy(&val); err != nil {
 					return err
 				} else {
-					(*out)[key] = *newVal.(*interface{})
+					(*out)[key] = *newVal.(*runtime.Object)
 				}
 			}
 		} else {
@@ -280,12 +280,12 @@ func DeepCopy_servicecatalog_InstanceSpec(in interface{}, out interface{}, c *co
 		*out = *in
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
-			*out = make(map[string]interface{})
+			*out = make(map[string]runtime.Object)
 			for key, val := range *in {
 				if newVal, err := c.DeepCopy(&val); err != nil {
 					return err
 				} else {
-					(*out)[key] = *newVal.(*interface{})
+					(*out)[key] = *newVal.(*runtime.Object)
 				}
 			}
 		} else {
