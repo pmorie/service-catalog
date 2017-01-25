@@ -178,7 +178,7 @@ type InstanceSpec struct {
 	// ServicePlanName is the reference to the ServicePlan for this instance.
 	PlanName string `json:"planName"`
 
-	Parameters map[string]runtime.RawExtension `json:"parameters"`
+	Parameters map[string]string `json:"parameters"`
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB SB API.
@@ -257,7 +257,7 @@ type BindingSpec struct {
 	// should be injected with the results of the binding.  Immutable.
 	AppLabelSelector metav1.LabelSelector `json:"appLabelSelector"`
 
-	Parameters map[string]runtime.RawExtension `json:"parameters"`
+	Parameters map[string]string `json:"parameters"`
 
 	// Names of subordinate objects to create
 	SecretName    string `json:"secretName"`

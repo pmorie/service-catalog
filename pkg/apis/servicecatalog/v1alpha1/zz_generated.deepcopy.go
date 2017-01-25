@@ -118,13 +118,9 @@ func DeepCopy_v1alpha1_BindingSpec(in interface{}, out interface{}, c *conversio
 		}
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
-			*out = make(map[string]runtime.RawExtension)
+			*out = make(map[string]string)
 			for key, val := range *in {
-				if newVal, err := c.DeepCopy(&val); err != nil {
-					return err
-				} else {
-					(*out)[key] = *newVal.(*runtime.RawExtension)
-				}
+				(*out)[key] = val
 			}
 		} else {
 			out.Parameters = nil
@@ -280,13 +276,9 @@ func DeepCopy_v1alpha1_InstanceSpec(in interface{}, out interface{}, c *conversi
 		*out = *in
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
-			*out = make(map[string]runtime.RawExtension)
+			*out = make(map[string]string)
 			for key, val := range *in {
-				if newVal, err := c.DeepCopy(&val); err != nil {
-					return err
-				} else {
-					(*out)[key] = *newVal.(*runtime.RawExtension)
-				}
+				(*out)[key] = val
 			}
 		} else {
 			out.Parameters = nil

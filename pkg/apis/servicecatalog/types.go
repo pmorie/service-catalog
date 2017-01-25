@@ -22,7 +22,7 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 )
 
-// TODO: all metadata and parametersfields need to be refactored to real
+// TODO: all metadata fields need to be refactored to real
 // types; skipping for now to get very large generation PR in.
 
 // +nonNamespaced=true
@@ -180,7 +180,7 @@ type InstanceSpec struct {
 	// ServicePlanName is the reference to the ServicePlan for this instance.
 	PlanName string
 
-	Parameters map[string]runtime.Object
+	Parameters map[string]string
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
@@ -259,7 +259,7 @@ type BindingSpec struct {
 	// should be injected with the results of the binding.  Immutable.
 	AppLabelSelector metav1.LabelSelector
 
-	Parameters map[string]runtime.Object
+	Parameters map[string]string
 
 	// Names of subordinate objects to create
 	SecretName    string
