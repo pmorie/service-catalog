@@ -17,15 +17,41 @@ limitations under the License.
 package v1alpha1_test
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	versioned "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/testapi"
+	"k8s.io/kubernetes/pkg/apimachinery/registered"
 	"k8s.io/kubernetes/pkg/runtime"
+	"k8s.io/kubernetes/pkg/runtime/schema"
 )
+
+func init() {
+	testapi.Groups[servicecatalog.GroupName] = serviceCatalogAPIGroup()
+}
+
+func serviceCatalogAPIGroup() testapi.TestGroup {
+	// OOPS: didn't register the right group version
+	groupVersion, err := schema.ParseGroupVersion("servicecatalog.k8s.io/v1alpha1")
+	if err != nil {
+		panic(fmt.Sprintf("Error parsing groupversion: %v", err))
+	}
+
+	externalGroupVersion := schema.GroupVersion{Group: servicecatalog.GroupName,
+		Version: registered.GroupOrDie(servicecatalog.GroupName).GroupVersion.Version}
+
+	return testapi.NewTestGroup(
+		groupVersion,
+		servicecatalog.SchemeGroupVersion,
+		api.Scheme.KnownTypes(servicecatalog.SchemeGroupVersion),
+		api.Scheme.KnownTypes(externalGroupVersion),
+	)
+}
 
 func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
 	codec, err := testapi.GetCodecForObject(obj)
@@ -42,7 +68,7 @@ func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
 		t.Fatalf("%v\nData: %s\nSource: %#v", err, string(data), obj)
 	}
 	obj3 := reflect.New(reflect.TypeOf(obj).Elem()).Interface().(runtime.Object)
-	err = servicecatalog.Scheme.Convert(obj2, obj3, nil)
+	err = api.Scheme.Convert(obj2, obj3, nil)
 	if err != nil {
 		t.Fatalf("%v\nSource: %#v", err, obj2)
 	}
