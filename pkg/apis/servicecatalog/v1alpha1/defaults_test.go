@@ -21,30 +21,30 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	versioned "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"k8s.io/kubernetes/pkg/api/testapi"
 	"k8s.io/kubernetes/pkg/runtime"
 )
 
 func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
-	// TODO: This looks closer to where I need to be... not sure yet how to get
-	// the encoder and decoder needed here
-	encoder := servicecatalog.Codecs.EncoderForVersion(nil, versioned.SchemeGroupVersion)
-	decoder := servicecatalog.Codecs.DecoderToVersion(nil, versioned.SchemeGroupVersion)
-	codec := servicecatalog.Codecs.CodecForVersions(encoder, decoder, versioned.SchemeGroupVersion, versioned.SchemeGroupVersion)
+	codec, err := testapi.GetCodecForObject(obj)
+	if err != nil {
+		t.Fatalf("%v\n %#v", err, obj)
+	}
+	t.Logf("---- codec: %+v ----", codec)
 	data, err := runtime.Encode(codec, obj)
 	if err != nil {
 		t.Fatalf("%v\n %#v", err, obj)
 	}
 	obj2, err := runtime.Decode(codec, data)
 	if err != nil {
-		t.Errorf("%v\nData: %s\nSource: %#v", err, string(data), obj)
-		return nil
+		t.Fatalf("%v\nData: %s\nSource: %#v", err, string(data), obj)
 	}
 	obj3 := reflect.New(reflect.TypeOf(obj).Elem()).Interface().(runtime.Object)
 	err = servicecatalog.Scheme.Convert(obj2, obj3, nil)
 	if err != nil {
-		t.Errorf("%v\nSource: %#v", err, obj2)
-		return nil
+		t.Fatalf("%v\nSource: %#v", err, obj2)
 	}
 	return obj3
 }
