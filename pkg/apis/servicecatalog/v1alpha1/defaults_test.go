@@ -27,12 +27,13 @@ import (
 
 func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
 	// TODO: This looks closer to where I need to be... not sure yet how to get
-	// all the values I need to pass to CodecForVersions(...)
-	codec := servicecatalog.Codecs.CodecForVersions(encoder, decoder, encode, decode)
+	// the encoder and decoder needed here
+	encoder := servicecatalog.Codecs.EncoderForVersion(nil, versioned.SchemeGroupVersion)
+	decoder := servicecatalog.Codecs.DecoderToVersion(nil, versioned.SchemeGroupVersion)
+	codec := servicecatalog.Codecs.CodecForVersions(encoder, decoder, versioned.SchemeGroupVersion, versioned.SchemeGroupVersion)
 	data, err := runtime.Encode(codec, obj)
 	if err != nil {
-		t.Errorf("%v\n %#v", err, obj)
-		return nil
+		t.Fatalf("%v\n %#v", err, obj)
 	}
 	obj2, err := runtime.Decode(codec, data)
 	if err != nil {
