@@ -20,14 +20,15 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	versioned "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/runtime"
 )
 
 func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
-	// TODO: I think this next line is WRONG
-	codec := api.Codecs.LegacyCodec(versioned.SchemeGroupVersion)
+	// TODO: This looks closer to where I need to be... not sure yet how to get
+	// all the values I need to pass to CodecForVersions(...)
+	codec := servicecatalog.Codecs.CodecForVersions(encoder, decoder, encode, decode)
 	data, err := runtime.Encode(codec, obj)
 	if err != nil {
 		t.Errorf("%v\n %#v", err, obj)
@@ -39,7 +40,7 @@ func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
 		return nil
 	}
 	obj3 := reflect.New(reflect.TypeOf(obj).Elem()).Interface().(runtime.Object)
-	err = api.Scheme.Convert(obj2, obj3, nil)
+	err = servicecatalog.Scheme.Convert(obj2, obj3, nil)
 	if err != nil {
 		t.Errorf("%v\nSource: %#v", err, obj2)
 		return nil
