@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: apiserver
-        image: {{ .Values.registry }}/apiserver:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        image: {{ if .Values.registry }}{{ cat .Values.registry "/"}}{{ end }}apiserver:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
         imagePullPolicy: {{ default "Always" .Values.imagePullPolicy }}
         args: 
         - --etcd-servers
@@ -37,7 +37,11 @@ metadata:
   name: apiserver
 spec:
 {{ if .Values.debug }}
+{{ if .Values.nodePort }}
+  type: NodePort
+{{ else }}
   type: LoadBalancer
+{{ end }}
 {{ end }}
   selector:
     app: apiserver
@@ -45,3 +49,6 @@ spec:
   - protocol: TCP
     port: 6443
     targetPort: 6443
+{{ if .Values.nodePort }}
+    nodePort: {{ .Values.nodePort }}
+{{ end }}
