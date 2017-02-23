@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/1.5/kubernetes"
 	"k8s.io/client-go/1.5/pkg/api"
 	"k8s.io/client-go/1.5/pkg/api/v1"
+	kapiv1 "k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/cache"
 	"k8s.io/kubernetes/pkg/util/runtime"
 
@@ -158,38 +159,88 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
-	brokerCatalog, err := brokerClient.GetCatalog()
-	if err != nil {
-		glog.Errorf("Error getting broker catalog for broker %v: %v", broker.Name, err)
-		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, ErrorFetchingCatalogReason, ErrorFetchingCatalogMessage)
 
-		return
-	} else {
-		glog.V(5).Infof("Successfully fetched %v catalog entries for Broker %v", len(brokerCatalog.Services), broker.Name)
-	}
+	if broker.DeletionTimestamp == nil { // Add or update
+		glog.V(4).Infof("Adding/Updating Broker %v", broker.Name)
+		brokerCatalog, err := brokerClient.GetCatalog()
+		if err != nil {
+			glog.Errorf("Error getting broker catalog for broker %v: %v", broker.Name, err)
+			c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, ErrorFetchingCatalogReason, ErrorFetchingCatalogMessage)
 
-	glog.V(4).Infof("Converting catalog response for Broker %v into service-catalog API", broker.Name)
-	catalog, err := convertCatalog(brokerCatalog)
-	if err != nil {
-		glog.Errorf("Error converting catalog payload for broker %v to service-catalog API: %v", broker.Name, err)
-		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, ErrorSyncingCatalogReason, ErrorSyncingCatalogMessage)
-		return
-	} else {
-		glog.V(5).Infof("Successfully converted catalog payload from Broker %v to service-catalog API", broker.Name)
-	}
+			return
+		} else {
+			glog.V(5).Infof("Successfully fetched %v catalog entries for Broker %v", len(brokerCatalog.Services), broker.Name)
+		}
 
-	for _, serviceClass := range catalog {
-		glog.V(4).Infof("Reconciling serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
-		if err := c.reconcileServiceClassFromBrokerCatalog(broker, serviceClass); err != nil {
-			glog.Errorf("Error reconciling serviceClass %v (broker %v): %v", serviceClass.Name, broker.Name, err)
+		glog.V(4).Infof("Converting catalog response for Broker %v into service-catalog API", broker.Name)
+		catalog, err := convertCatalog(brokerCatalog)
+		if err != nil {
+			glog.Errorf("Error converting catalog payload for broker %v to service-catalog API: %v", broker.Name, err)
 			c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, ErrorSyncingCatalogReason, ErrorSyncingCatalogMessage)
 			return
 		} else {
-			glog.V(5).Infof("Reconciled serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
+			glog.V(5).Infof("Successfully converted catalog payload from Broker %v to service-catalog API", broker.Name)
 		}
+
+		for _, serviceClass := range catalog {
+			glog.V(4).Infof("Reconciling serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
+			if err := c.reconcileServiceClassFromBrokerCatalog(broker, serviceClass); err != nil {
+				glog.Errorf("Error reconciling serviceClass %v (broker %v): %v", serviceClass.Name, broker.Name, err)
+				c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, ErrorSyncingCatalogReason, ErrorSyncingCatalogMessage)
+				return
+			} else {
+				glog.V(5).Infof("Reconciled serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
+			}
+		}
+
+		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionTrue, "FetchedCatalog", "Successfully fetched catalog from broker")
+		return
 	}
 
-	c.updateBrokerReadyCondition(broker, v1alpha1.ConditionTrue, "FetchedCatalog", "Successfully fetched catalog from broker")
+	// Soft delete...
+	if len(broker.Finalizers) > 0 && broker.Finalizers[0] == "BrokerFinalizer" {
+		glog.V(4).Infof("Deleting Broker %v", broker.Name)
+
+		// Get ALL ServiceClasses. Remove those that reference this Broker.
+		svcClasses, err := c.serviceCatalogClient.ServiceClasses().List(kapiv1.ListOptions{})
+		if err != nil {
+			c.updateBrokerReadyCondition(
+				broker,
+				v1alpha1.ConditionUnknown,
+				"ErrorListingServiceClasses",
+				"Error listing ServiceClasses",
+			)
+			return
+		}
+
+		// Delete ServiceClasses that are for THIS Broker.
+		for _, svcClass := range svcClasses.Items {
+			if svcClass.BrokerName == broker.Name {
+				err := c.serviceCatalogClient.ServiceClasses().Delete(svcClass.Name, &kapiv1.DeleteOptions{})
+				if err != nil {
+					glog.Errorf("Error deleting ServiceClass %v (Broker %v): %v", svcClass.Name, broker.Name, err)
+					c.updateBrokerReadyCondition(
+						broker,
+						v1alpha1.ConditionUnknown,
+						"ErrorDeletingServiceClass",
+						"Error deleting ServiceClass",
+					)
+					return
+				}
+			}
+		}
+
+		// Clear the finalizer
+		c.updateBrokerFinalizers(broker, broker.Finalizers[1:])
+		c.updateBrokerReadyCondition(
+			broker,
+			v1alpha1.ConditionFalse,
+			"DeletedSuccessfully",
+			"The broker was deleted successfully",
+		)
+
+		glog.V(5).Infof("Successfully deleted Broker %v", broker.Name)
+	}
 }
 
 // reconcileServiceClassFromBrokerCatalog reconciles a ServiceClass after the
@@ -267,6 +318,30 @@ func (c *controller) updateBrokerReadyCondition(broker *v1alpha1.Broker, status 
 		glog.V(5).Infof("Updated ready condition for Broker %v to %v", broker.Name, status)
 	}
 
+	return err
+}
+
+// updateBrokerFinalizers updates the given finalizers for the given Broker.
+func (c *controller) updateBrokerFinalizers(
+	broker *v1alpha1.Broker,
+	finalizers []string) error {
+
+	clone, err := api.Scheme.DeepCopy(broker)
+	if err != nil {
+		return err
+	}
+	toUpdate := clone.(*v1alpha1.Broker)
+
+	toUpdate.Finalizers = finalizers
+
+	logContext := fmt.Sprintf("finalizers for Broker %v to %v",
+		broker.Name, finalizers)
+
+	glog.V(4).Infof("Updating %v", logContext)
+	_, err = c.serviceCatalogClient.Brokers().UpdateStatus(toUpdate)
+	if err != nil {
+		glog.Errorf("Error updating %v: %v", logContext, err)
+	}
 	return err
 }
 
