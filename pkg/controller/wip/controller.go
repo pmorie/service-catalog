@@ -384,50 +384,92 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
 
-	parameters, err := unmarshalParameters(instance.Spec.Parameters.Raw)
-	if err != nil {
-		glog.Errorf("Failed to unmarshal Instance parameters\n%s\n %v", instance.Spec.Parameters, err)
+	if instance.DeletionTimestamp == nil { // Add or update
+		glog.V(4).Infof("Adding/Updating Instance %v/%v", instance.Namespace, instance.Name)
+
+		parameters, err := unmarshalParameters(instance.Spec.Parameters.Raw)
+		if err != nil {
+			glog.Errorf("Failed to unmarshal Instance parameters\n%s\n %v", instance.Spec.Parameters, err)
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithParameters,
+				"Error unmarshaling instance parameters",
+			)
+			return
+		}
+		request := &brokerapi.CreateServiceInstanceRequest{
+			ServiceID:  serviceClass.OSBGUID,
+			PlanID:     servicePlan.OSBGUID,
+			Parameters: parameters,
+		}
+
+		// TODO: handle async provisioning
+
+		glog.V(4).Infof("Provisioning a new Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
+		response, err := brokerClient.CreateServiceInstance(instance.Spec.OSBGUID, request)
+		if err != nil {
+			glog.Errorf("Error provisioning Instance %v/%v of ServiceClass %v at Broker %v: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				"ProvisionCallFailed",
+				"Provision call failed")
+			return
+		} else {
+			glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
+		}
+
+		// TODO: process response
+
 		c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			errorWithParameters,
-			"Error unmarshaling instance parameters",
+			v1alpha1.ConditionTrue,
+			"ProvisionedSuccessfully",
+			"The instance was provisioned successfully",
 		)
 		return
 	}
 
-	request := &brokerapi.CreateServiceInstanceRequest{
-		ServiceID:  serviceClass.OSBGUID,
-		PlanID:     servicePlan.OSBGUID,
-		Parameters: parameters,
-	}
+	// Soft delete...
+	if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "InstanceFinalizer" {
+		glog.V(4).Infof("Deleting Instance %v/%v", instance.Namespace, instance.Name)
 
-	// TODO: handle async provisioning
+		request := &brokerapi.DeleteServiceInstanceRequest{
+			ServiceID: serviceClass.OSBGUID,
+			PlanID:    servicePlan.OSBGUID,
+		}
 
-	glog.V(4).Infof("Provisioning a new Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
-	response, err := brokerClient.CreateServiceInstance(instance.Spec.OSBGUID, request)
-	if err != nil {
-		glog.Errorf("Error provisioning Instance %v/%v of ServiceClass %v at Broker %v: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+		// TODO: handle async deprovisioning
+
+		glog.V(4).Infof("Deprovisioning Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
+		err = brokerClient.DeleteServiceInstance(instance.Spec.OSBGUID, request)
+		if err != nil {
+			glog.Errorf("Error deprovisioning Instance %v/%v of ServiceClass %v at Broker %v: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionUnknown,
+				"DeprovisionCallFailed",
+				"Deprovision call failed")
+			return
+		}
+
 		c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
-			"ProvisionCallFailed",
-			"Provision call failed")
-		return
+			"DeprovisionedSuccessfully",
+			"The instance was deprovisioned successfully",
+		)
+		// Clear the finalizer
+		c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+
+		glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
 	}
-	glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
-
-	// TODO: process response
-
-	c.updateInstanceCondition(
-		instance,
-		v1alpha1.InstanceConditionReady,
-		v1alpha1.ConditionTrue,
-		"ProvisionedSuccessfully",
-		"The instance was provisioned successfully",
-	)
 }
 
 func findServicePlan(name string, plans []v1alpha1.ServicePlan) *v1alpha1.ServicePlan {
@@ -467,6 +509,30 @@ func (c *controller) updateInstanceCondition(
 		glog.Errorf("Failed to update condition %v for Instance %v/%v to true: %v", conditionType, instance.Namespace, instance.Name, err)
 	}
 
+	return err
+}
+
+// updateInstanceFinalizers updates the given finalizers for the given Binding.
+func (c *controller) updateInstanceFinalizers(
+	instance *v1alpha1.Instance,
+	finalizers []string) error {
+
+	clone, err := api.Scheme.DeepCopy(instance)
+	if err != nil {
+		return err
+	}
+	toUpdate := clone.(*v1alpha1.Instance)
+
+	toUpdate.Finalizers = finalizers
+
+	logContext := fmt.Sprintf("finalizers for Instance %v/%v to %v",
+		instance.Namespace, instance.Name, finalizers)
+
+	glog.V(4).Infof("Updating %v", logContext)
+	_, err = c.serviceCatalogClient.Instances(instance.Namespace).UpdateStatus(toUpdate)
+	if err != nil {
+		glog.Errorf("Error updating %v: %v", logContext, err)
+	}
 	return err
 }
 
