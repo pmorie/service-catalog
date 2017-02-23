@@ -87,6 +87,8 @@ func (bindingRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object
 	binding.Status = sc.BindingStatus{}
 	// Fill in the first entry set to "creating"?
 	binding.Status.Conditions = []sc.BindingCondition{}
+
+	binding.Finalizers = []string{"BindingFinalizer"}
 }
 
 func (bindingRESTStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
