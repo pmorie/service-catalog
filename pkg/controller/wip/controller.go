@@ -536,19 +536,6 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		return
 	}
 
-	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
-	if servicePlan == nil {
-		glog.Errorf("Instance %v/%v references a non-existent ServicePlan %v on ServiceClass %v", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
-		c.updateBindingCondition(
-			binding,
-			v1alpha1.BindingConditionReady,
-			v1alpha1.ConditionFalse,
-			"ReferencesNonexistentServicePlan",
-			"The binding references a ServicePlan that does not exist",
-		)
-		return
-	}
-
 	username, password, err := GetAuthCredentialsFromBroker(c.kubeClient, broker)
 	if err != nil {
 		glog.Errorf("Error getting broker auth credentials for broker %v: %v", broker.Name, err)
@@ -565,47 +552,114 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
 
-	parameters, err := unmarshalParameters(binding.Spec.Parameters.Raw)
-	if err != nil {
-		glog.Errorf("Failed to unmarshal Binding parameters\n%s\n %v", binding.Spec.Parameters, err)
+	if binding.DeletionTimestamp == nil { // Add or update
+		glog.V(4).Infof("Adding/Updating Binding %v/%v", binding.Namespace, binding.Name)
+
+		servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
+		if servicePlan == nil {
+			glog.Errorf("Instance %v/%v references a non-existent ServicePlan %v on ServiceClass %v", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionFalse,
+				"ReferencesNonexistentServicePlan",
+				"The Binding references an Instance which references ServicePlan that does not exist",
+			)
+			return
+		}
+
+		parameters, err := unmarshalParameters(binding.Spec.Parameters.Raw)
+		if err != nil {
+			glog.Errorf("Failed to unmarshal Binding parameters\n%s\n %v", binding.Spec.Parameters, err)
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithParameters,
+				"Error unmarshaling binding parameters",
+			)
+			return
+		}
+		request := &brokerapi.BindingRequest{
+			ServiceID:  serviceClass.OSBGUID,
+			PlanID:     servicePlan.OSBGUID,
+			Parameters: parameters,
+		}
+		response, err := brokerClient.CreateServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, request)
+		if err != nil {
+			glog.Errorf("Error creating Binding %v/%v for Instance %v/%v of ServiceClass %v at Broker %v: %v", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionFalse,
+				"BindCallFailed",
+				"Bind call failed")
+			return
+		}
+		err = c.injectBinding(binding, &response.Credentials)
+		if err != nil {
+			glog.Errorf("Error injecting binding results for Binding %v/%v: %v", binding.Namespace, binding.Name, err)
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionFalse,
+				"ErrorInjectingBindResult",
+				"Error injecting bind result",
+			)
+			return
+		}
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionTrue,
+			"InjectedBindResult",
+			"Injected bind result",
+		)
+
+		glog.V(5).Infof("Successfully bound to Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
+
+		return
+	}
+
+	// Soft delete...
+	if len(binding.Finalizers) > 0 && binding.Finalizers[0] == "BindingFinalizer" {
+		glog.V(4).Infof("Deleting Binding %v/%v", binding.Namespace, binding.Name)
+
+		err = c.uninjectBinding(binding)
+		if err != nil {
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionUnknown,
+				"ErrorUninjectingBinding",
+				"Error uninjecting binding",
+			)
+			return
+		}
+		err = brokerClient.DeleteServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID)
+		if err != nil {
+			glog.Errorf("Error deleting Binding %v/%v for Instance %v/%v of ServiceClass %v at Broker %v: %v", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionFalse,
+				"UnbindCallFailed",
+				"Unbind call failed")
+			return
+		}
+
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
-			errorWithParameters,
-			"Error unmarshaling binding parameters",
+			"UnboundSuccessfully",
+			"The binding was deleted successfully",
 		)
-		return
+		// Clear the finalizer
+		c.updateBindingFinalizers(binding, binding.Finalizers[1:])
+
+		glog.V(5).Infof("Successfully deleted Binding %v/%v of Instance %v/%v of ServiceClass %v at Broker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
 	}
-
-	request := &brokerapi.BindingRequest{
-		ServiceID:  serviceClass.OSBGUID,
-		PlanID:     servicePlan.OSBGUID,
-		Parameters: parameters,
-	}
-
-	response, err := brokerClient.CreateServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, request)
-
-	err = c.injectBinding(binding, &response.Credentials)
-	if err != nil {
-		glog.Errorf("Error injecting binding results for Binding %v/%v: %v", binding.Namespace, binding.Name, err)
-		c.updateBindingCondition(
-			binding,
-			v1alpha1.BindingConditionReady,
-			v1alpha1.ConditionFalse,
-			"ErrorInjectingBindResult",
-			"Error injecting bind result",
-		)
-		return
-	}
-
-	c.updateBindingCondition(
-		binding,
-		v1alpha1.BindingConditionReady,
-		v1alpha1.ConditionTrue,
-		"InjectedBindResult",
-		"Injected bind result",
-	)
 }
 
 func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *brokerapi.Credential) error {
@@ -642,6 +696,14 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *broke
 	return err
 }
 
+func (c *controller) uninjectBinding(binding *v1alpha1.Binding) error {
+	_, err := c.kubeClient.Core().Secrets(binding.Namespace).Get(binding.Spec.SecretName)
+	if err == nil {
+		err = c.kubeClient.Core().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &api.DeleteOptions{})
+	}
+	return err
+}
+
 // updateBindingCondition updates the given condition for the given Binding
 // with the given status, reason, and message.
 func (c *controller) updateBindingCondition(
@@ -665,6 +727,30 @@ func (c *controller) updateBindingCondition(
 
 	logContext := fmt.Sprintf("%v condition for Binding %v/%v to %v (Reason: %q, Message: %q)",
 		conditionType, binding.Namespace, binding.Name, status, reason, message)
+
+	glog.V(4).Infof("Updating %v", logContext)
+	_, err = c.serviceCatalogClient.Bindings(binding.Namespace).UpdateStatus(toUpdate)
+	if err != nil {
+		glog.Errorf("Error updating %v: %v", logContext, err)
+	}
+	return err
+}
+
+// updateBindingFinalizers updates the given finalizers for the given Binding.
+func (c *controller) updateBindingFinalizers(
+	binding *v1alpha1.Binding,
+	finalizers []string) error {
+
+	clone, err := api.Scheme.DeepCopy(binding)
+	if err != nil {
+		return err
+	}
+	toUpdate := clone.(*v1alpha1.Binding)
+
+	toUpdate.Finalizers = finalizers
+
+	logContext := fmt.Sprintf("finalizers for Binding %v/%v to %v",
+		binding.Namespace, binding.Name, finalizers)
 
 	glog.V(4).Infof("Updating %v", logContext)
 	_, err = c.serviceCatalogClient.Bindings(binding.Namespace).UpdateStatus(toUpdate)
