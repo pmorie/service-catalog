@@ -766,14 +766,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 	if len(binding.Finalizers) > 0 && binding.Finalizers[0] == "BindingFinalizer" {
 		glog.V(4).Infof("Deleting Binding %v/%v", binding.Namespace, binding.Name)
 
-		err = c.uninjectBinding(binding)
+		err = c.ejectBinding(binding)
 		if err != nil {
 			c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionUnknown,
-				"ErrorUninjectingBinding",
-				"Error uninjecting binding",
+				"ErrorEjectingBinding",
+				"Error ejecting binding",
 			)
 			return
 		}
@@ -837,7 +837,7 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *broke
 	return err
 }
 
-func (c *controller) uninjectBinding(binding *v1alpha1.Binding) error {
+func (c *controller) ejectBinding(binding *v1alpha1.Binding) error {
 	_, err := c.kubeClient.Core().Secrets(binding.Namespace).Get(binding.Spec.SecretName)
 	if err == nil {
 		err = c.kubeClient.Core().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &api.DeleteOptions{})
