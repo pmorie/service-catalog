@@ -98,9 +98,10 @@ func NewStorage(opts generic.RESTOptions) (brokers, brokersStatus rest.Storage) 
 		// QualifiedResource should always be plural
 		QualifiedResource: api.Resource("brokers"),
 
-		CreateStrategy: brokerRESTStrategies,
-		UpdateStrategy: brokerRESTStrategies,
-		DeleteStrategy: brokerRESTStrategies,
+		CreateStrategy:          brokerRESTStrategies,
+		UpdateStrategy:          brokerRESTStrategies,
+		DeleteStrategy:          brokerRESTStrategies,
+		EnableGarbageCollection: true,
 
 		Storage:     storageInterface,
 		DestroyFunc: dFunc,

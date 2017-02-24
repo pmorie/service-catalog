@@ -92,7 +92,7 @@ func TestBrokerClient(t *testing.T) {
 
 	brokerServer, err := brokerClient.Create(broker)
 	if nil != err {
-		t.Fatal("error creating the broker", broker)
+		t.Fatal("error creating broker: %v", broker, err)
 	}
 	if broker.Name != brokerServer.Name {
 		t.Fatalf("didn't get the same broker back from the server \n%+v\n%+v", broker, brokerServer)
@@ -178,10 +178,21 @@ func TestBrokerClient(t *testing.T) {
 
 	err = brokerClient.Delete("test-broker", &v1.DeleteOptions{})
 	if nil != err {
-		t.Fatal("broker should be deleted", err)
+		t.Fatal("broker delete should have been be accepted", err)
 	}
 
 	brokerDeleted, err := brokerClient.Get("test-broker")
+	if nil != err {
+		t.Fatal("broker should not be deleted", brokerDeleted)
+	}
+
+	brokerDeleted.ObjectMeta.Finalizers = nil
+	_, err = brokerClient.UpdateStatus(brokerDeleted)
+	if nil != err {
+		t.Fatal("broker should be deleted", err)
+	}
+
+	brokerDeleted, err = brokerClient.Get("test-broker")
 	if nil == err {
 		t.Fatal("broker should be deleted", brokerDeleted)
 	}
@@ -206,7 +217,7 @@ func TestServiceClassClient(t *testing.T) {
 
 	serviceClassAtServer, err := serviceClassClient.Create(serviceClass)
 	if nil != err {
-		t.Fatal("error creating the ServiceClass", serviceClass)
+		t.Fatal("error creating the ServiceClass: %v", serviceClass, err)
 	}
 	if serviceClass.Name != serviceClassAtServer.Name {
 		t.Fatalf("didn't get the same ServiceClass back from the server \n%+v\n%+v", serviceClass, serviceClassAtServer)
@@ -232,7 +243,6 @@ func TestServiceClassClient(t *testing.T) {
 	if nil == err {
 		t.Fatal("serviceclass should be deleted", serviceClassDeleted)
 	}
-
 }
 
 func TestInstanceClient(t *testing.T) {
@@ -266,7 +276,7 @@ func TestInstanceClient(t *testing.T) {
 
 	instanceServer, err := instanceClient.Create(instance)
 	if nil != err {
-		t.Fatal("error creating the instance", instance)
+		t.Fatal("error creating instance: %v", instance, err)
 	}
 	if instance.Name != instanceServer.Name {
 		t.Fatalf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
@@ -285,10 +295,21 @@ func TestInstanceClient(t *testing.T) {
 
 	err = instanceClient.Delete("test-instance", &v1.DeleteOptions{})
 	if nil != err {
-		t.Fatal("instance should be deleted", err)
+		t.Fatal("instance delete should have been accepted", err)
 	}
 
 	instanceDeleted, err := instanceClient.Get("test-instance")
+	if nil != err {
+		t.Fatal("instance should still exist", instanceDeleted)
+	}
+
+	instanceDeleted.ObjectMeta.Finalizers = nil
+	_, err = instanceClient.UpdateStatus(instanceDeleted)
+	if nil != err {
+		t.Fatal("error updating status", err)
+	}
+
+	instanceDeleted, err = instanceClient.Get("test-instance")
 	if nil == err {
 		t.Fatal("instance should be deleted", instanceDeleted)
 	}
@@ -335,7 +356,7 @@ func TestBindingClient(t *testing.T) {
 
 	bindingServer, err := bindingClient.Create(binding)
 	if nil != err {
-		t.Fatal("error creating the binding", binding)
+		t.Fatal("error creating binding: %v", binding, err)
 	}
 	if binding.Name != bindingServer.Name {
 		t.Fatalf("didn't get the same binding back from the server \n%+v\n%+v", binding, bindingServer)
