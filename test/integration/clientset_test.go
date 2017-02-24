@@ -286,6 +286,17 @@ func testBrokerClient(client servicecatalogclient.Interface, name string) error 
 	}
 
 	brokerDeleted, err := brokerClient.Get(name)
+	if nil != err {
+		return fmt.Errorf("broker should not be deleted (%s)", brokerDeleted, err)
+	}
+
+	brokerDeleted.ObjectMeta.Finalizers = nil
+	_, err = brokerClient.UpdateStatus(brokerDeleted)
+	if nil != err {
+		return fmt.Errorf("broker should be deleted (%s)", brokerDeleted, err)
+	}
+
+	brokerDeleted, err = brokerClient.Get("test-broker")
 	if nil == err {
 		return fmt.Errorf("broker should be deleted (%s)", brokerDeleted)
 	}
@@ -521,6 +532,17 @@ func testInstanceClient(client servicecatalogclient.Interface, name string) erro
 	}
 
 	instanceDeleted, err := instanceClient.Get(name)
+	if nil != err {
+		return fmt.Errorf("instance should still exist (%s)", instanceDeleted, err)
+	}
+
+	instanceDeleted.ObjectMeta.Finalizers = nil
+	_, err = instanceClient.UpdateStatus(instanceDeleted)
+	if nil != err {
+		return fmt.Errorf("error updating status (%s)", instanceDeleted, err)
+	}
+
+	instanceDeleted, err = instanceClient.Get("test-instance")
 	if nil == err {
 		return fmt.Errorf("instance should be deleted (%#v)", instanceDeleted)
 	}
