@@ -18,7 +18,6 @@ package wip
 
 import (
 	"testing"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -57,13 +56,8 @@ func TestReconcileBroker(t *testing.T) {
 	bindingCl := fakebrokerapi.NewBindingClient()
 	brokerClFunc := fakebrokerapi.NewClientFunc(catalogCl, instanceCl, bindingCl)
 
-	resyncDuration, err := time.ParseDuration("1m")
-	if err != nil {
-		glog.Fatal(err)
-	}
-
 	// create informers
-	informerFactory := servicecataloginformers.NewSharedInformerFactory(nil, fakeCatalogClient, resyncDuration)
+	informerFactory := servicecataloginformers.NewSharedInformerFactory(nil, fakeCatalogClient, 0)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
 	// create a test controller
@@ -93,7 +87,7 @@ func TestReconcileBroker(t *testing.T) {
 	// inject a broker resource into broker informer
 	testController.(*controller).reconcileBroker(broker)
 
-	actions := fakeCatalogClient.Actions()
+	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 2, len(actions); e != a {
 		t.Logf("%+v\n", actions)
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
@@ -128,4 +122,28 @@ func TestReconcileBroker(t *testing.T) {
 	}
 
 	stopCh <- struct{}{}
+}
+
+// filterActions filters the list/watch actions on service catalog resources
+// from an array of core.Action.  This is so that we can write tests without
+// worrying about the list/watching that the informer infrastructure might
+// have done.
+func filterActions(actions []core.Action) []core.Action {
+	ret := []core.Action{}
+	for _, action := range actions {
+		if len(action.GetNamespace()) == 0 &&
+			(action.Matches("list", "brokers") ||
+				action.Matches("list", "serviceclasses") ||
+				action.Matches("list", "instances") ||
+				action.Matches("list", "bindings") ||
+				action.Matches("watch", "brokers") ||
+				action.Matches("watch", "serviceclasses") ||
+				action.Matches("watch", "instances") ||
+				action.Matches("watch", "bindings")) {
+			continue
+		}
+		ret = append(ret, action)
+	}
+
+	return ret
 }
