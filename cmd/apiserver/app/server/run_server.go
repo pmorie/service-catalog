@@ -117,7 +117,7 @@ func runEtcdServer(opts *ServiceCatalogServerOptions) error {
 	}
 
 	// Set the finalized generic and storage configs
-	config := apiserver.NewEtcdConfig(opts.EtcdOptions.cl, genericConfig, 0, storageFactory)
+	config := apiserver.NewEtcdConfig( /*opts.EtcdOptions.cl, */ genericConfig, 0, storageFactory)
 
 	// Fill in defaults not already set in the config
 	completed := config.Complete()
