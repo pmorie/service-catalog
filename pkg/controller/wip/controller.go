@@ -207,7 +207,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 	// the head of the finalizers list.
 	// TODO: Should we use a more specific string here?
 	if len(broker.Finalizers) > 0 && broker.Finalizers[0] == "kubernetes" {
-		glog.V(4).Infof("Deleting Broker %v", broker.Name)
+		glog.V(4).Infof("Finalizing Broker %v", broker.Name)
 
 		// Get ALL ServiceClasses. Remove those that reference this Broker.
 		svcClasses, err := c.serviceCatalogClient.ServiceClasses().List(kapiv1.ListOptions{})
@@ -525,7 +525,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 	// the head of the finalizers list.
 	// TODO: Should we use a more specific string here?
 	if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "kubernetes" {
-		glog.V(4).Infof("Deleting Instance %v/%v", instance.Namespace, instance.Name)
+		glog.V(4).Infof("Finalizing Instance %v/%v", instance.Namespace, instance.Name)
 
 		request := &brokerapi.DeleteServiceInstanceRequest{
 			ServiceID: serviceClass.OSBGUID,
@@ -785,7 +785,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 	// the head of the finalizers list.
 	// TODO: Should we use a more specific string here?
 	if len(binding.Finalizers) > 0 && binding.Finalizers[0] == "kubernetes" {
-		glog.V(4).Infof("Deleting Binding %v/%v", binding.Namespace, binding.Name)
+		glog.V(4).Infof("Finalizing Binding %v/%v", binding.Namespace, binding.Name)
 
 		err = c.ejectBinding(binding)
 		if err != nil {
