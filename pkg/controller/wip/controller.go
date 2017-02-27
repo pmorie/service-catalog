@@ -205,7 +205,8 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 	// since those most be cleared in order, we proceed with the soft delete
 	// only if it's "our turn--" i.e. only if the finalizer we care about is at
 	// the head of the finalizers list.
-	if len(broker.Finalizers) > 0 && broker.Finalizers[0] == "BrokerFinalizer" {
+	// TODO: Should we use a more specific string here?
+	if len(broker.Finalizers) > 0 && broker.Finalizers[0] == "kubernetes" {
 		glog.V(4).Infof("Deleting Broker %v", broker.Name)
 
 		// Get ALL ServiceClasses. Remove those that reference this Broker.
@@ -522,7 +523,8 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 	// since those most be cleared in order, we proceed with the soft delete
 	// only if it's "our turn--" i.e. only if the finalizer we care about is at
 	// the head of the finalizers list.
-	if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "InstanceFinalizer" {
+	// TODO: Should we use a more specific string here?
+	if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "kubernetes" {
 		glog.V(4).Infof("Deleting Instance %v/%v", instance.Namespace, instance.Name)
 
 		request := &brokerapi.DeleteServiceInstanceRequest{
@@ -781,7 +783,8 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 	// since those most be cleared in order, we proceed with the soft delete
 	// only if it's "our turn--" i.e. only if the finalizer we care about is at
 	// the head of the finalizers list.
-	if len(binding.Finalizers) > 0 && binding.Finalizers[0] == "BindingFinalizer" {
+	// TODO: Should we use a more specific string here?
+	if len(binding.Finalizers) > 0 && binding.Finalizers[0] == "kubernetes" {
 		glog.V(4).Infof("Deleting Binding %v/%v", binding.Namespace, binding.Name)
 
 		err = c.ejectBinding(binding)
