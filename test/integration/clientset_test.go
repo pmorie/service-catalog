@@ -693,6 +693,17 @@ func testBindingClient(client servicecatalogclient.Interface, name string) error
 	}
 
 	bindingDeleted, err := bindingClient.Get(name)
+	if nil != err {
+		return fmt.Errorf("binding should still exist (%s)", bindingDeleted, err)
+	}
+
+	bindingDeleted.ObjectMeta.Finalizers = nil
+	_, err = bindingClient.UpdateStatus(bindingDeleted)
+	if nil != err {
+		return fmt.Errorf("error updating status (%s)", bindingDeleted, err)
+	}
+
+	bindingDeleted, err = bindingClient.Get(name)
 	if nil == err {
 		return fmt.Errorf("binding should be deleted (%#v)", bindingDeleted)
 	}
