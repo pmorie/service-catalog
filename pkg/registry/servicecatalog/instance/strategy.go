@@ -93,6 +93,7 @@ func (instanceRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Objec
 	// Fill in the first entry set to "creating"?
 	instance.Status.Conditions = []sc.InstanceCondition{}
 
+	// TODO: Should we use a more specific string here?
 	instance.Finalizers = []string{"kubernetes"}
 }
 
