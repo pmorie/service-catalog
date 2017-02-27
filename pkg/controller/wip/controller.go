@@ -198,7 +198,13 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		return
 	}
 
-	// Soft delete...
+	// All updates not having a DeletingTimestamp will have been handled above
+	// and returned early. If we reach this point, we're dealing with an update
+	// that's actually a soft delete-- i.e. we have some finalization to do.
+	// Since the potential exists for a broker to have multiple finalizers and
+	// since those most be cleared in order, we proceed with the soft delete
+	// only if it's "our turn--" i.e. only if the finalizer we care about is at
+	// the head of the finalizers list.
 	if len(broker.Finalizers) > 0 && broker.Finalizers[0] == "BrokerFinalizer" {
 		glog.V(4).Infof("Deleting Broker %v", broker.Name)
 
@@ -513,7 +519,13 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 		return
 	}
 
-	// Soft delete...
+	// All updates not having a DeletingTimestamp will have been handled above
+	// and returned early. If we reach this point, we're dealing with an update
+	// that's actually a soft delete-- i.e. we have some finalization to do.
+	// Since the potential exists for an instance to have multiple finalizers and
+	// since those most be cleared in order, we proceed with the soft delete
+	// only if it's "our turn--" i.e. only if the finalizer we care about is at
+	// the head of the finalizers list.
 	if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "InstanceFinalizer" {
 		glog.V(4).Infof("Deleting Instance %v/%v", instance.Namespace, instance.Name)
 
@@ -770,7 +782,13 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		return
 	}
 
-	// Soft delete...
+	// All updates not having a DeletingTimestamp will have been handled above
+	// and returned early. If we reach this point, we're dealing with an update
+	// that's actually a soft delete-- i.e. we have some finalization to do.
+	// Since the potential exists for a binding to have multiple finalizers and
+	// since those most be cleared in order, we proceed with the soft delete
+	// only if it's "our turn--" i.e. only if the finalizer we care about is at
+	// the head of the finalizers list.
 	if len(binding.Finalizers) > 0 && binding.Finalizers[0] == "BindingFinalizer" {
 		glog.V(4).Infof("Deleting Binding %v/%v", binding.Namespace, binding.Name)
 
