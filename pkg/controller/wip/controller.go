@@ -808,7 +808,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		}
 		err = brokerClient.DeleteServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID)
 		if err != nil {
-			glog.Errorf("Error deleting Binding %v/%v for Instance %v/%v of ServiceClass %v at Broker %v: %v", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			glog.Errorf("Error unbinding Binding %v/%v for Instance %v/%v of ServiceClass %v at Broker %v: %v", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
 			c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
