@@ -289,10 +289,14 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
 	}
 
-	// verify no kube resources created
+	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
+	if e, a := 1, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+	getAction := kubeActions[0].(coretesting.GetActionImpl)
+	if e, a := "get", getAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
 
 	close(stopCh)
