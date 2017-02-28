@@ -27,11 +27,32 @@ import (
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers"
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers/servicecatalog/v1alpha1"
 
-	"k8s.io/client-go/1.5/kubernetes/fake"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
-	"k8s.io/kubernetes/pkg/runtime"
+
+	"k8s.io/client-go/1.5/kubernetes/fake"
+	"k8s.io/client-go/1.5/pkg/runtime"
+	coretesting "k8s.io/client-go/1.5/testing"
 )
+
+// NOTE:
+//
+// There are two different 'testing' packages imported here from kubernetes
+// projects:
+//
+// - k8s.io/kubernetes/client/testing/core
+// - k8s.io/client-go/1.5/testing
+//
+// These are the same package, but we have to import them from both locations
+// because our API is written using packages from kubernetes directly, while
+// for the kubernetes core API, we use client-go.
+//
+// We _have_ to do this for now because the version of kubernetes we vendor in
+// for the API server guts uses the kubernetes packages.  Once we rebase onto
+// the latest kubernetes repo, we'll be able to stop using the kubernetes/...
+// packages entirely and _just_ consume types from client-go.
+//
+// See issue: https://github.com/kubernetes-incubator/service-catalog/issues/413
 
 func TestReconcileBroker(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerCatalog, _, _, testController, _, stopCh := newTestController(t)
@@ -231,7 +252,7 @@ func TestReconcileBrokerWithInstanceError(t *testing.T) {
 	close(stopCh)
 }
 func TestReconcileBrokerWithAuthError(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerCatalog, _, _, testController, _, stopCh := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, _, _, _, testController, _, stopCh := newTestController(t)
 
 	broker := &v1alpha1.Broker{
 		ObjectMeta: v1.ObjectMeta{Name: "test-name"},
@@ -245,7 +266,7 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 		},
 	}
 
-	fakeKubeClient.AddReactor("get", "secrets", func(action core.Action) (bool, runtime.Object, error) {
+	fakeKubeClient.AddReactor("get", "secrets", func(action coretesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("no secret defined")
 	})
 
