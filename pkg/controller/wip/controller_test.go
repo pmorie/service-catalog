@@ -17,6 +17,7 @@ limitations under the License.
 package wip
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/client-go/1.5/kubernetes/fake"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
+	"k8s.io/kubernetes/pkg/runtime"
 )
 
 func TestReconcileBroker(t *testing.T) {
@@ -183,6 +185,93 @@ func TestReconcileInstanceHappyLand(t *testing.T) {
 
 	if e, a := v1alpha1.ConditionTrue, updateObject.Status.Conditions[0].Status; e != a {
 		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	close(stopCh)
+}
+
+func TestReconcileBrokerWithInstanceError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerCatalog, _, _, testController, _, stopCh := newTestController(t)
+
+	fakeBrokerCatalog.RetErr = fakebrokerapi.ErrInstanceNotFound
+
+	broker := &v1alpha1.Broker{
+		ObjectMeta: v1.ObjectMeta{Name: "test-name"},
+		Spec: v1alpha1.BrokerSpec{
+			URL:     "https://example.com",
+			OSBGUID: "OSBGUID field",
+		},
+	}
+
+	testController.reconcileBroker(broker)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := broker.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
+	}
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	close(stopCh)
+}
+func TestReconcileBrokerWithAuthError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerCatalog, _, _, testController, _, stopCh := newTestController(t)
+
+	broker := &v1alpha1.Broker{
+		ObjectMeta: v1.ObjectMeta{Name: "test-name"},
+		Spec: v1alpha1.BrokerSpec{
+			URL:     "https://example.com",
+			OSBGUID: "OSBGUID field",
+			AuthSecret: &v1.ObjectReference{
+				Namespace: "does_not_exist",
+				Name:      "auth-name",
+			},
+		},
+	}
+
+	fakeKubeClient.AddReactor("get", "secrets", func(action core.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("no secret defined")
+	})
+
+	testController.reconcileBroker(broker)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := broker.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
+	}
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
 	close(stopCh)
