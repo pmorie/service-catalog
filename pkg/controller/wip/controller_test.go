@@ -23,16 +23,17 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
-	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers"
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers/servicecatalog/v1alpha1"
 
+	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
+	"k8s.io/kubernetes/pkg/runtime"
 
-	"k8s.io/client-go/1.5/kubernetes/fake"
-	"k8s.io/client-go/1.5/pkg/runtime"
-	coretesting "k8s.io/client-go/1.5/testing"
+	clientgofake "k8s.io/client-go/1.5/kubernetes/fake"
+	clientgoruntime "k8s.io/client-go/1.5/pkg/runtime"
+	clientgotesting "k8s.io/client-go/1.5/testing"
 )
 
 // NOTE:
@@ -266,7 +267,7 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 		},
 	}
 
-	fakeKubeClient.AddReactor("get", "secrets", func(action coretesting.Action) (bool, runtime.Object, error) {
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
 		return true, nil, errors.New("no secret defined")
 	})
 
@@ -294,7 +295,7 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 	if e, a := 1, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
-	getAction := kubeActions[0].(coretesting.GetAction)
+	getAction := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -318,7 +319,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	}
 
 	//Create(*v1alpha1.ServiceClass) (*v1alpha1.ServiceClass, error)
-	fakeCatalogClient.AddReactor("create", "serviceclasses", func(action coretesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("create", "serviceclasses", func(action core.Action) (bool, runtime.Object, error) {
 		//func(*v1alpha1.ServiceClass) (*v1alpha1.ServiceClass, error) {
 		return true, nil, errors.New("no secret defined")
 	})
@@ -347,7 +348,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	if e, a := 1, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
-	getAction := kubeActions[0].(coretesting.GetAction)
+	getAction := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -370,7 +371,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 // If there is an error, newTestController calls 'Fatal' on the injected
 // testing.T.
 func newTestController(t *testing.T) (
-	*fake.Clientset,
+	*clientgofake.Clientset,
 	*servicecatalogclientset.Clientset,
 	*fakebrokerapi.CatalogClient,
 	*fakebrokerapi.InstanceClient,
@@ -379,7 +380,7 @@ func newTestController(t *testing.T) (
 	v1alpha1informers.Interface,
 	chan struct{}) {
 	// create a fake kube client
-	fakeKubeClient := &fake.Clientset{}
+	fakeKubeClient := &clientgofake.Clientset{}
 	// create a fake sc client
 	fakeCatalogClient := &servicecatalogclientset.Clientset{}
 
