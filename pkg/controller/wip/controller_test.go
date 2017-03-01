@@ -18,6 +18,7 @@ package wip
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -28,7 +29,7 @@ import (
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers/servicecatalog/v1alpha1"
 
 	"k8s.io/client-go/1.5/kubernetes/fake"
-
+	ctesting "k8s.io/client-go/1.5/testing"
 	"k8s.io/kubernetes/pkg/api/v1"
 	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
@@ -606,6 +607,123 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	// wonky.
 	if _, ok := fakeBindingClient.Bindings[instanceGUID+":"+bindingGUID]; !ok {
 		t.Fatalf("Did not find the created Binding in fakeInstanceBinding after creation")
+	}
+}
+
+func TestReconcileBindingDelete(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, _, fakeBindingClient, testController, sharedInformers, stopCh := newTestController(t)
+	defer close(stopCh)
+
+	fakeBindingClient.Bindings = map[string]struct{}{
+		fmt.Sprintf("%s:%s", instanceGUID, bindingGUID): struct{}{},
+	}
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-instance",
+			Namespace: "test-ns",
+		},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "test-serviceclass",
+			PlanName:         "default",
+			OSBGUID:          instanceGUID,
+		},
+	}
+
+	sharedInformers.Instances().Informer().GetStore().Add(instance)
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: v1.ObjectMeta{
+			Name:              "test-binding",
+			Namespace:         "test-ns",
+			DeletionTimestamp: &metav1.Time{},
+			Finalizers:        []string{"kubernetes"},
+		},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.ObjectReference{Name: "test-instance", Namespace: "test-ns"},
+			OSBGUID:     bindingGUID,
+			SecretName:  "test-secret",
+		},
+	}
+
+	testController.reconcileBinding(binding)
+
+	kubeActions := fakeKubeClient.Actions()
+	// The two actions should be:
+	// 0. Getting the secret
+	// 1. Deleting the secret
+	if e, a := 2, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	getAction := kubeActions[0].(ctesting.GetActionImpl)
+	if e, a := "get", getAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on kubeActions[0]; expected %v, got %v", e, a)
+	}
+
+	if e, a := binding.Spec.SecretName, getAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+	}
+
+	deleteAction := kubeActions[1].(ctesting.DeleteActionImpl)
+	if e, a := "delete", deleteAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+	}
+
+	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+	}
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	// The two actions should be:
+	// 0. Updating the ready condition
+	// 1. Removing the finalizer
+	if e, a := 2, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+	}
+
+	updatedObject := updateAction.GetObject().(*v1alpha1.Binding)
+	if e, a := binding.Name, updatedObject.Name; e != a {
+		t.Fatalf("Unexpected name of binding: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updatedObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.BindingConditionReady, updatedObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionFalse, updatedObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	if _, ok := fakeBindingClient.Bindings[bindingGUID]; ok {
+		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
+	}
+
+	updateAction = actions[1].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updatedObject = updateAction.GetObject().(*v1alpha1.Binding)
+	if e, a := binding.Name, updatedObject.Name; e != a {
+		t.Fatalf("Unexpected name of binding: expected %v, got %v", e, a)
+	}
+
+	if e, a := 0, len(updatedObject.Finalizers); e != a {
+		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
 	}
 }
 
