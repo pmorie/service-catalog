@@ -18,6 +18,7 @@ package wip
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -589,6 +590,89 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	// wonky.
 	if _, ok := fakeBindingClient.Bindings[instanceGUID+":"+bindingGUID]; !ok {
 		t.Fatalf("Did not find the created Binding in fakeInstanceBinding after creation")
+	}
+}
+
+func TestReconcileBindingDelete(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, _, fakeBindingClient, testController, sharedInformers, stopCh := newTestController(t)
+	defer close(stopCh)
+
+	fakeBindingClient.Bindings = map[string]struct{}{
+		fmt.Sprintf("%s:%s", instanceGUID, bindingGUID): struct{}{},
+	}
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-instance",
+			Namespace: "test-ns",
+		},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "test-serviceclass",
+			PlanName:         "default",
+			OSBGUID:          instanceGUID,
+		},
+	}
+
+	sharedInformers.Instances().Informer().GetStore().Add(instance)
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: v1.ObjectMeta{
+			Name:              "test-binding",
+			Namespace:         "test-ns",
+			DeletionTimestamp: &metav1.Time{},
+			Finalizers:        []string{"kubernetes"},
+		},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.ObjectReference{Name: "test-instance", Namespace: "test-ns"},
+			OSBGUID:     bindingGUID,
+		},
+	}
+
+	testController.reconcileBinding(binding)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	// The two actions are:
+	// 1. Updating the ready condition
+	// 2. Removing the finalizer
+	if e, a := 2, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	// TODO: Why is this 2 and not 0?
+	if e, a := 2, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+	}
+
+	updateObject := updateAction.GetObject().(*v1alpha1.Binding)
+	if e, a := binding.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of binding deleted: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updateObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.BindingConditionReady, updateObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	if _, ok := fakeBindingClient.Bindings[bindingGUID]; ok {
+		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
 	}
 }
 
