@@ -145,6 +145,7 @@ const (
 	errorFetchingCatalogMessage string = "Error fetching catalog"
 	errorSyncingCatalogReason   string = "ErrorSyncingCatalog"
 	errorSyncingCatalogMessage  string = "Error syncing catalog from Broker"
+	errorWithParameters         string = "ErrorWithParameters"
 )
 
 // reconcileBroker is the control-loop that reconciles a Broker.
@@ -395,17 +396,6 @@ func (c *controller) instanceAdd(obj interface{}) {
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 	c.instanceAdd(newObj)
 }
-
-// const (
-// 	ErrorFetchingCatalogReason  string = "ErrorFetchingCatalog"
-// 	ErrorFetchingCatalogMessage string = "Error fetching catalog"
-// 	ErrorSyncingCatalogReason   string = "ErrorSyncingCatalog"
-// 	ErrorSyncingCatalogMessage  string = "Error syncing catalog from Broker"
-// )
-
-const (
-	errorWithParameters string = "ErrorWithParameters"
-)
 
 // reconcileInstance is the control-loop for reconciling Instances.
 func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
