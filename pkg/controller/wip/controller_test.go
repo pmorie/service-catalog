@@ -294,7 +294,60 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 	if e, a := 1, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
-	getAction := kubeActions[0].(coretesting.GetActionImpl)
+	getAction := kubeActions[0].(coretesting.GetAction)
+	if e, a := "get", getAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	close(stopCh)
+}
+
+func TestReconcileBrokerWithReconcileError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, _, _, testController, _, stopCh := newTestController(t)
+
+	broker := &v1alpha1.Broker{
+		ObjectMeta: v1.ObjectMeta{Name: "test-name"},
+		Spec: v1alpha1.BrokerSpec{
+			URL:     "https://example.com",
+			OSBGUID: "OSBGUID field",
+			AuthSecret: &v1.ObjectReference{
+				Namespace: "does_not_exist",
+				Name:      "auth-name",
+			},
+		},
+	}
+
+	//Create(*v1alpha1.ServiceClass) (*v1alpha1.ServiceClass, error)
+	fakeCatalogClient.AddReactor("create", "serviceclasses", func(action coretesting.Action) (bool, runtime.Object, error) {
+		//func(*v1alpha1.ServiceClass) (*v1alpha1.ServiceClass, error) {
+		return true, nil, errors.New("no secret defined")
+	})
+
+	testController.reconcileBroker(broker)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := broker.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
+	}
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	// verify one kube action occurred
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 1, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+	getAction := kubeActions[0].(coretesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
