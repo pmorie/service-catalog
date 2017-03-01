@@ -29,6 +29,7 @@ import (
 
 	"k8s.io/client-go/1.5/kubernetes/fake"
 	"k8s.io/kubernetes/pkg/api/v1"
+	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
 )
 
@@ -360,6 +361,75 @@ func TestReconcileInstance(t *testing.T) {
 		if len(si.Parameters) > 0 {
 			t.Fatalf("Unexpected parameters, expected none, got %+v", si.Parameters)
 		}
+	}
+}
+
+func TestReconcileInstanceDelete(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, fakeInstanceClient, _, testController, sharedInformers, stopCh := newTestController(t)
+	defer close(stopCh)
+
+	fakeInstanceClient.Instances = map[string]*brokerapi.ServiceInstance{
+		instanceGUID: &brokerapi.ServiceInstance{},
+	}
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{
+			Name:              "test-instance",
+			Namespace:         "test-ns",
+			DeletionTimestamp: &metav1.Time{},
+			Finalizers:        []string{"kubernetes"},
+		},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "test-serviceclass",
+			PlanName:         "default",
+			OSBGUID:          instanceGUID,
+		},
+	}
+
+	testController.reconcileInstance(instance)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	// The two actions are:
+	// 1. Updating the ready condition
+	// 2. Removing the finalizer
+	if e, a := 2, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updateObject := updateAction.GetObject().(*v1alpha1.Instance)
+	if e, a := instance.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of instance deleted: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updateObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.InstanceConditionReady, updateObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	if _, ok := fakeInstanceClient.Instances[instanceGUID]; ok {
+		t.Fatalf("Found the deleted Instance in fakeInstanceClient after deletion")
 	}
 }
 
