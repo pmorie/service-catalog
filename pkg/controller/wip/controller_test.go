@@ -138,6 +138,58 @@ func TestReconcileBroker(t *testing.T) {
 
 }
 
+func TestReconcileBrokerDelete(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, _, _, testController, sharedInformers, stopCh := newTestController(t)
+	defer close(stopCh)
+
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	broker := getTestBroker()
+	broker.DeletionTimestamp = &metav1.Time{}
+	broker.Finalizers = []string{"kubernetes"}
+
+	testController.reconcileBroker(broker)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	// The three actions are:
+	// 1. Updating the ready condition
+	// 2. Removing the finalizer
+	// 3. Deleting the associated ServiceClass
+	if e, a := 3, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	// Verify no core kube actions occurred
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+	}
+
+	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := broker.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updateObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.BrokerConditionReady, updateObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+}
+
 func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	_, fakeCatalogClient, _, _, _, testController, _, stopCh := newTestController(t)
 	defer close(stopCh)
