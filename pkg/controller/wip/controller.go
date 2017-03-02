@@ -27,6 +27,7 @@ import (
 	"k8s.io/client-go/1.5/pkg/api/v1"
 	kapiv1 "k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/cache"
+	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/util/runtime"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -211,7 +212,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		glog.V(4).Infof("Finalizing Broker %v", broker.Name)
 
 		// Get ALL ServiceClasses. Remove those that reference this Broker.
-		svcClasses, err := c.serviceCatalogClient.ServiceClasses().List(kapiv1.ListOptions{})
+		svcClasses, err := c.serviceClassLister.List(labels.Everything())
 		if err != nil {
 			c.updateBrokerReadyCondition(
 				broker,
@@ -223,7 +224,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		}
 
 		// Delete ServiceClasses that are for THIS Broker.
-		for _, svcClass := range svcClasses.Items {
+		for _, svcClass := range svcClasses {
 			if svcClass.BrokerName == broker.Name {
 				err := c.serviceCatalogClient.ServiceClasses().Delete(svcClass.Name, &kapiv1.DeleteOptions{})
 				if err != nil {

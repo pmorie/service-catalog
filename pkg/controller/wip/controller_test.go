@@ -152,9 +152,9 @@ func TestReconcileBrokerDelete(t *testing.T) {
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	// The three actions are:
+	// 0. Deleting the associated ServiceClass
 	// 1. Updating the ready condition
 	// 2. Removing the finalizer
-	// 3. Deleting the associated ServiceClass
 	if e, a := 3, len(actions); e != a {
 		t.Logf("%+v\n", actions)
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
@@ -166,7 +166,9 @@ func TestReconcileBrokerDelete(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	updateAction := actions[0].(core.UpdateAction)
+	// TODO: verify delete action and update actions
+
+	updateAction := actions[1].(core.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -422,7 +424,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	defer close(stopCh)
 
 	fakeInstanceClient.Instances = map[string]*brokerapi.ServiceInstance{
-		instanceGUID: &brokerapi.ServiceInstance{},
+		instanceGUID: {},
 	}
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
@@ -650,7 +652,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 	defer close(stopCh)
 
 	fakeBindingClient.Bindings = map[string]struct{}{
-		fmt.Sprintf("%s:%s", instanceGUID, bindingGUID): struct{}{},
+		fmt.Sprintf("%s:%s", instanceGUID, bindingGUID): {},
 	}
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
