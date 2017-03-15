@@ -330,7 +330,7 @@ func testServiceClassClient(client servicecatalogclient.Interface, name string) 
 		ObjectMeta: v1.ObjectMeta{Name: name},
 		BrokerName: "test-broker",
 		Bindable:   true,
-		OSBGUID:    "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+		OSBGUID:    "b8269ab4-7d2d-456d-8C8b-5aab63b321d1",
 	}
 
 	// start from scratch
@@ -350,13 +350,14 @@ func testServiceClassClient(client servicecatalogclient.Interface, name string) 
 
 	serviceClassAtServer, err := serviceClassClient.Create(serviceClass)
 	if nil != err {
-		return fmt.Errorf("error creating the ServiceClass (%v)", serviceClass)
+		return fmt.Errorf("error creating the ServiceClass (%v): %v", serviceClass, err)
 	}
 	if name != serviceClassAtServer.Name {
 		return fmt.Errorf(
-			"didn't get the same ServiceClass back from the server \n%+v\n%+v",
+			"didn't get the same ServiceClass back from the server \n%+v\n%+v\v\n",
 			serviceClass,
 			serviceClassAtServer,
+			err,
 		)
 	}
 
