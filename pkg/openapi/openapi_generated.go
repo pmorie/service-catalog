@@ -7368,6 +7368,13 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format: "",
 						},
 					},
+					"checksum": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Checksum is the checksum of the InstanceSpec that was last successfully reconciled against the broker.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"serviceClassName", "planName", "osbGuid"},
 			},

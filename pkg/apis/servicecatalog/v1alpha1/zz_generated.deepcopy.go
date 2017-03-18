@@ -303,6 +303,13 @@ func DeepCopy_v1alpha1_InstanceSpec(in interface{}, out interface{}, c *conversi
 		} else {
 			out.OSBLastOperation = nil
 		}
+		if in.Checksum != nil {
+			in, out := &in.Checksum, &out.Checksum
+			*out = new(string)
+			**out = **in
+		} else {
+			out.Checksum = nil
+		}
 		return nil
 	}
 }

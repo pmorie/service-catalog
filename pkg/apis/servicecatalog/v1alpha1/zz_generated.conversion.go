@@ -402,6 +402,7 @@ func autoConvert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *Instan
 	out.OSBGUID = in.OSBGUID
 	out.OSBDashboardURL = (*string)(unsafe.Pointer(in.OSBDashboardURL))
 	out.OSBLastOperation = (*string)(unsafe.Pointer(in.OSBLastOperation))
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
@@ -416,6 +417,7 @@ func autoConvert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servic
 	out.OSBGUID = in.OSBGUID
 	out.OSBDashboardURL = (*string)(unsafe.Pointer(in.OSBDashboardURL))
 	out.OSBLastOperation = (*string)(unsafe.Pointer(in.OSBLastOperation))
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
