@@ -120,6 +120,13 @@ func DeepCopy_v1alpha1_BindingSpec(in interface{}, out interface{}, c *conversio
 		} else {
 			out.Parameters = nil
 		}
+		if in.Checksum != nil {
+			in, out := &in.Checksum, &out.Checksum
+			*out = new(string)
+			**out = **in
+		} else {
+			out.Checksum = nil
+		}
 		return nil
 	}
 }

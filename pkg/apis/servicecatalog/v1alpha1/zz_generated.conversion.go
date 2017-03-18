@@ -160,6 +160,7 @@ func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingS
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
 	out.OSBGUID = in.OSBGUID
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
@@ -172,6 +173,7 @@ func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicec
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
 	out.OSBGUID = in.OSBGUID
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
