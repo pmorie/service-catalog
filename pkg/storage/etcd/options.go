@@ -17,13 +17,26 @@ limitations under the License.
 package etcd
 
 import (
-	"k8s.io/kubernetes/pkg/api/rest"
-	"k8s.io/kubernetes/pkg/fields"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/registry/generic"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/storage"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apiserver/pkg/registry/generic"
+	"k8s.io/apiserver/pkg/registry/rest"
+	"k8s.io/apiserver/pkg/storage"
 )
+
+/* JPEELER take out
+type StorageDecorator func(
+	copier runtime.ObjectCopier,
+	config *storagebackend.Config,
+	capacity int,
+	objectType runtime.Object,
+	resourcePrefix string,
+	keyFunc func(obj runtime.Object) (string, error),
+	newListFunc func() runtime.Object,
+	getAttrsFunc storage.AttrFunc,
+	trigger storage.TriggerPublisherFunc) (storage.Interface, factory.DestroyFunc)
+*/
 
 // Options is the set of options necessary for creating etcd-backed storage
 type Options struct {

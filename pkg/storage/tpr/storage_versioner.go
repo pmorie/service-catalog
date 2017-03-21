@@ -21,9 +21,9 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/storage"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apiserver/pkg/storage"
+	"k8s.io/client-go/kubernetes"
 )
 
 type versioner struct {
@@ -31,7 +31,7 @@ type versioner struct {
 	singularKind Kind
 	listKind     Kind
 	checkObject  func(runtime.Object) error
-	cl           clientset.Interface
+	cl           kubernetes.Interface
 	defaultNS    string
 }
 

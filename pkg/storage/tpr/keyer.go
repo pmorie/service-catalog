@@ -21,7 +21,8 @@ import (
 	"fmt"
 	"strings"
 
-	"k8s.io/kubernetes/pkg/api"
+	// JPEELER
+	api "k8s.io/apiserver/pkg/endpoints/request"
 )
 
 var (
