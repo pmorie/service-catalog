@@ -19,8 +19,8 @@ package validation
 import (
 	"testing"
 
-	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/api/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
@@ -34,7 +34,7 @@ func TestValidateBinding(t *testing.T) {
 		{
 			name: "valid",
 			binding: &servicecatalog.Binding{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-binding",
 					Namespace: "test-ns",
 				},
@@ -50,7 +50,7 @@ func TestValidateBinding(t *testing.T) {
 		{
 			name: "missing namespace",
 			binding: &servicecatalog.Binding{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-binding",
 				},
 				Spec: servicecatalog.BindingSpec{
@@ -65,7 +65,7 @@ func TestValidateBinding(t *testing.T) {
 		{
 			name: "missing instance name",
 			binding: &servicecatalog.Binding{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-binding",
 					Namespace: "test-ns",
 				},
@@ -78,7 +78,7 @@ func TestValidateBinding(t *testing.T) {
 		{
 			name: "invalid instance name",
 			binding: &servicecatalog.Binding{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-binding",
 					Namespace: "test-ns",
 				},
@@ -94,7 +94,7 @@ func TestValidateBinding(t *testing.T) {
 		{
 			name: "missing secretName",
 			binding: &servicecatalog.Binding{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-binding",
 					Namespace: "test-ns",
 				},
@@ -109,7 +109,7 @@ func TestValidateBinding(t *testing.T) {
 		{
 			name: "invalid secretName",
 			binding: &servicecatalog.Binding{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-binding",
 					Namespace: "test-ns",
 				},
