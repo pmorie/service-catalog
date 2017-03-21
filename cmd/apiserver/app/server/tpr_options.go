@@ -18,11 +18,11 @@ package server
 
 import (
 	"github.com/spf13/pflag"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
-	// "k8s.io/kubernetes/pkg/client/typed/dynamic"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/genericapiserver"
-	"k8s.io/kubernetes/pkg/storage/storagebackend"
+	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api"
+
+	serverstorage "k8s.io/apiserver/pkg/server/storage"
+	"k8s.io/apiserver/pkg/storage/storagebackend"
 )
 
 // TPROptions contains the complete configuration for an API server that
@@ -40,13 +40,13 @@ func NewTPROptions() *TPROptions {
 }
 
 // NewStorageFactory returns a new StorageFactory from the config in opts
-func (s *TPROptions) storageFactory() genericapiserver.StorageFactory {
-	return genericapiserver.NewDefaultStorageFactory(
+func (s *TPROptions) storageFactory() serverstorage.StorageFactory {
+	return serverstorage.NewDefaultStorageFactory(
 		storagebackend.Config{},
 		"application/json",
 		api.Codecs,
-		genericapiserver.NewDefaultResourceEncodingConfig(),
-		genericapiserver.NewResourceConfig(),
+		serverstorage.NewDefaultResourceEncodingConfig(api.Registry),
+		serverstorage.NewResourceConfig(),
 	)
 }
 

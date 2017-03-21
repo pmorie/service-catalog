@@ -18,13 +18,13 @@ package apiserver
 
 import (
 	"github.com/golang/glog"
-	"k8s.io/kubernetes/pkg/genericapiserver"
-	"k8s.io/kubernetes/pkg/registry/generic"
-	"k8s.io/kubernetes/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apiserver/pkg/registry/generic"
+	"k8s.io/apiserver/pkg/server/storage"
 )
 
 type tprRESTOptionsFactory struct {
-	storageFactory genericapiserver.StorageFactory
+	storageFactory storage.StorageFactory
 }
 
 func (t tprRESTOptionsFactory) NewFor(resource schema.GroupResource) generic.RESTOptions {

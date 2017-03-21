@@ -19,8 +19,9 @@ package apiserver
 import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
-	"k8s.io/kubernetes/pkg/genericapiserver"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/apiserver/pkg/server/storage"
+	clientset "k8s.io/client-go/kubernetes"
 )
 
 // tprConfig is the configuration needed to run the API server in TPR storage mode
@@ -28,7 +29,7 @@ type tprConfig struct {
 	cl              clientset.Interface
 	genericConfig   *genericapiserver.Config
 	globalNamespace string
-	storageFactory  genericapiserver.StorageFactory
+	storageFactory  storage.StorageFactory
 }
 
 // NewTPRConfig returns a new Config for a server that is backed by TPR storage
@@ -36,7 +37,7 @@ func NewTPRConfig(
 	cl clientset.Interface,
 	genericCfg *genericapiserver.Config,
 	globalNS string,
-	factory genericapiserver.StorageFactory,
+	factory storage.StorageFactory,
 ) Config {
 	return &tprConfig{
 		cl:              cl,
@@ -67,8 +68,8 @@ func (t *tprConfig) Complete() CompletedConfig {
 type completedTPRConfig struct {
 	cl clientset.Interface
 	*tprConfig
-	apiResourceConfigSource genericapiserver.APIResourceConfigSource
-	factory                 genericapiserver.StorageFactory
+	apiResourceConfigSource storage.APIResourceConfigSource
+	factory                 storage.StorageFactory
 }
 
 // NewServer returns a new service catalog server, that is ready for execution
@@ -79,14 +80,15 @@ func (c *completedTPRConfig) NewServer() (*ServiceCatalogAPIServer, error) {
 	}
 	glog.V(4).Infoln("Created skeleton API server. Installing API groups")
 
-	roFactory := tprRESTOptionsFactory{
-		storageFactory: c.factory,
-	}
+	// JPEELER
+	// roFactory := tprRESTOptionsFactory{
+	// 	storageFactory: c.factory,
+	// }
 	providers := restStorageProviders(c.globalNamespace, server.StorageTypeTPR, c.cl)
 	for _, provider := range providers {
 		groupInfo, err := provider.NewRESTStorage(
 			c.apiResourceConfigSource, // genericapiserver.APIResourceConfigSource
-			roFactory.NewFor,          // registry.RESTOptionsGetter
+			c.genericConfig.RESTOptionsGetter,
 		)
 		if IsErrAPIGroupDisabled(err) {
 			glog.Warningf("Skipping API group %v because it is not enabled", provider.GroupName())

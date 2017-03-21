@@ -18,9 +18,9 @@ package apiserver
 
 import (
 	"github.com/golang/glog"
-	"k8s.io/kubernetes/pkg/genericapiserver"
-	"k8s.io/kubernetes/pkg/registry/generic"
-	"k8s.io/kubernetes/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apiserver/pkg/registry/generic"
+	"k8s.io/apiserver/pkg/server/storage"
 )
 
 // BABYNETES: had to be lifted from pkg/master/master.go
@@ -30,7 +30,7 @@ import (
 type etcdRESTOptionsFactory struct {
 	deleteCollectionWorkers int
 	enableGarbageCollection bool
-	storageFactory          genericapiserver.StorageFactory
+	storageFactory          storage.StorageFactory
 	storageDecorator        generic.StorageDecorator
 }
 

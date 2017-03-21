@@ -19,9 +19,9 @@ package apiserver
 import (
 	servicecatalogrest "github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/rest"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
-	"k8s.io/kubernetes/pkg/genericapiserver"
-	"k8s.io/kubernetes/pkg/version"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/version"
 )
 
 func restStorageProviders(

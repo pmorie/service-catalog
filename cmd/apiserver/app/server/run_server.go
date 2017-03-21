@@ -23,8 +23,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/genericapiserver"
 )
 
 // RunServer runs an API server with configuration according to opts
@@ -92,37 +90,41 @@ func runEtcdServer(opts *ServiceCatalogServerOptions) error {
 	}
 
 	glog.V(4).Infoln("Creating storage factory")
-	// The API server stores objects using a particular API version for each
-	// group, regardless of API version of the object when it was created.
-	//
-	// storageGroupsToEncodingVersion holds a map of API group to version that
-	// the API server uses to store that group.
-	storageGroupsToEncodingVersion, err := opts.GenericServerRunOptions.StorageGroupsToEncodingVersion()
-	if err != nil {
-		return fmt.Errorf("error generating storage version map: %s", err)
-	}
+	// JPEELER - this definitely needs fixing:
+	// StorageGroupsToEncodingVersion is in storage_versions in k8s
+	// BuildDefaultStorageFactory is in default_storage_factory_builder in k8s
+	// // The API server stores objects using a particular API version for each
+	// // group, regardless of API version of the object when it was created.
+	// //
+	// // storageGroupsToEncodingVersion holds a map of API group to version that
+	// // the API server uses to store that group.
+	// storageGroupsToEncodingVersion, err := opts.GenericServerRunOptions.StorageGroupsToEncodingVersion()
+	// if err != nil {
+	// 	return fmt.Errorf("error generating storage version map: %s", err)
+	// }
 
-	// Build the default storage factory.
-	//
-	// The default storage factory returns the storage interface for a
-	// particular GroupResource (an (api-group, resource) tuple).
-	storageFactory, err := genericapiserver.BuildDefaultStorageFactory(
-		etcdOpts.StorageConfig,
-		opts.GenericServerRunOptions.DefaultStorageMediaType,
-		api.Codecs,
-		genericapiserver.NewDefaultResourceEncodingConfig(),
-		storageGroupsToEncodingVersion,
-		nil, /* group storage version overrides */
-		apiserver.DefaultAPIResourceConfigSource(),
-		opts.GenericServerRunOptions.RuntimeConfig,
-	)
-	if err != nil {
-		glog.Errorf("error creating storage factory: %v", err)
-		return err
-	}
+	// // Build the default storage factory.
+	// //
+	// // The default storage factory returns the storage interface for a
+	// // particular GroupResource (an (api-group, resource) tuple).
+	// storageFactory, err := genericapiserver.BuildDefaultStorageFactory(
+	// 	etcdOpts.StorageConfig,
+	// 	opts.GenericServerRunOptions.DefaultStorageMediaType,
+	// 	api.Codecs,
+	// 	genericapiserver.NewDefaultResourceEncodingConfig(),
+	// 	storageGroupsToEncodingVersion,
+	// 	nil, /* group storage version overrides */
+	// 	apiserver.DefaultAPIResourceConfigSource(),
+	// 	opts.GenericServerRunOptions.RuntimeConfig,
+	// )
+	// if err != nil {
+	// 	glog.Errorf("error creating storage factory: %v", err)
+	// 	return err
+	// }
 
-	// Set the finalized generic and storage configs
-	config := apiserver.NewEtcdConfig(genericConfig, 0 /* deleteCollectionWorkers */, storageFactory)
+	// // Set the finalized generic and storage configs
+	// config := apiserver.NewEtcdConfig(genericConfig, 0 /* deleteCollectionWorkers */, storageFactory)
+	config := apiserver.NewEtcdConfig(genericConfig, 0 /* deleteCollectionWorkers */, nil)
 
 	// Fill in defaults not already set in the config
 	completed := config.Complete()
