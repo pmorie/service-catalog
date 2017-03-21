@@ -27,8 +27,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app"
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
 
-	"k8s.io/kubernetes/pkg/healthz"
-	"k8s.io/kubernetes/pkg/util/flag"
+	"k8s.io/apiserver/pkg/server/healthz"
+	"k8s.io/apiserver/pkg/util/flag"
 	"k8s.io/kubernetes/pkg/util/logs"
 	"k8s.io/kubernetes/pkg/version/verflag"
 

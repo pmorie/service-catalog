@@ -22,19 +22,19 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 
-	"k8s.io/client-go/1.5/kubernetes"
-	"k8s.io/client-go/1.5/pkg/api"
-	"k8s.io/client-go/1.5/pkg/api/errors"
-	"k8s.io/client-go/1.5/pkg/api/v1"
-	kapiv1 "k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/client/cache"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/tools/cache"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
-	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/servicecatalog/v1alpha1"
+	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1alpha1"
 )
 
@@ -224,7 +224,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		// Delete ServiceClasses that are for THIS Broker.
 		for _, svcClass := range svcClasses {
 			if svcClass.BrokerName == broker.Name {
-				err := c.serviceCatalogClient.ServiceClasses().Delete(svcClass.Name, &kapiv1.DeleteOptions{})
+				err := c.serviceCatalogClient.ServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
 				if err != nil {
 					glog.Errorf("Error deleting ServiceClass %v (Broker %v): %v", svcClass.Name, broker.Name, err)
 					c.updateBrokerReadyCondition(
@@ -822,7 +822,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 
 func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *brokerapi.Credential) error {
 	secret := &v1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      binding.Spec.SecretName,
 			Namespace: binding.Namespace,
 		},
@@ -840,7 +840,7 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *broke
 
 	found := false
 
-	_, err := c.kubeClient.Core().Secrets(binding.Namespace).Get(binding.Spec.SecretName)
+	_, err := c.kubeClient.Core().Secrets(binding.Namespace).Get(binding.Spec.SecretName, metav1.GetOptions{})
 	if err == nil {
 		found = true
 	}
@@ -855,7 +855,7 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *broke
 }
 
 func (c *controller) ejectBinding(binding *v1alpha1.Binding) error {
-	_, err := c.kubeClient.Core().Secrets(binding.Namespace).Get(binding.Spec.SecretName)
+	_, err := c.kubeClient.Core().Secrets(binding.Namespace).Get(binding.Spec.SecretName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
@@ -866,7 +866,7 @@ func (c *controller) ejectBinding(binding *v1alpha1.Binding) error {
 	}
 
 	glog.V(5).Infof("Deleting secret %v/%v", binding.Namespace, binding.Spec.SecretName)
-	err = c.kubeClient.Core().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &api.DeleteOptions{})
+	err = c.kubeClient.Core().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{})
 
 	return err
 }
@@ -947,7 +947,7 @@ func GetAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.
 		return "", "", nil
 	}
 
-	authSecret, err := client.Core().Secrets(broker.Spec.AuthSecret.Namespace).Get(broker.Spec.AuthSecret.Name)
+	authSecret, err := client.Core().Secrets(broker.Spec.AuthSecret.Namespace).Get(broker.Spec.AuthSecret.Name, metav1.GetOptions{})
 	if err != nil {
 		return "", "", err
 	}
