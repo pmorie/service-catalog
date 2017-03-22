@@ -1,14 +1,16 @@
-hash: 52dfa7938a4008fc2ea1fecf877b436d48643d2c010fdcc743131d71e262b8b1
-updated: 2017-03-21T17:40:22.4513895-04:00
+hash: 234b5c4d7240036f77c7955ae93a671dbdae5e37b11b8c94de783cdd95cc6f21
+updated: 2017-03-22T14:28:31.902911416-04:00
 imports:
 - name: github.com/coreos/etcd
-  version: ace3a217b00c537c059df066f7f262669f900faa
+  version: cc198e22d3b8fd7ec98304c95e68ee375be54589
 - name: github.com/ghodss/yaml
   version: 04f313413ffd65ce25f2541bfd2b2ceec5c0908c
 - name: github.com/gorilla/handlers
   version: 13d73096a474cac93275c679c7b8a2dc17ddba82
 - name: github.com/gorilla/mux
   version: 599cba5e7b6137d46ddf58fb1765f5d928e69604
+- name: github.com/grpc-ecosystem/grpc-gateway
+  version: f52d055dc48aec25854ed7d31862f78913cf17d1
 - name: github.com/jteeuwen/go-bindata
   version: a0ff2567cfb70903282db057e799fd826784d41d
 - name: github.com/kubernetes/repo-infra
