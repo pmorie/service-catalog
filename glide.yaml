@@ -1,7 +1,11 @@
 package: github.com/kubernetes-incubator/service-catalog
 import:
 - package: github.com/coreos/etcd
+  version: cc198e22d3b8fd7ec98304c95e68ee375be54589
 - package: google.golang.org/grpc
+  version: 231b4cfea0e79843053a33f5fe90bd4d84b23cd3
+- package: github.com/grpc-ecosystem/grpc-gateway
+  version: f52d055dc48aec25854ed7d31862f78913cf17d1
 - package: github.com/ghodss/yaml
 - package: github.com/gorilla/handlers
 - package: github.com/gorilla/mux
