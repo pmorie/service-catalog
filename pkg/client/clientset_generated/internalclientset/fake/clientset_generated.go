@@ -24,8 +24,8 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
 	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/testing"
-	"k8s.io/kubernetes/pkg/api"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.
