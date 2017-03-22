@@ -1,5 +1,5 @@
-hash: d66e2f8ca59bbb1230b9177bbc9e4a099eb1c85afe2728439eac16ad870f4eea
-updated: 2017-03-15T10:07:04.437126259-04:00
+hash: 52dfa7938a4008fc2ea1fecf877b436d48643d2c010fdcc743131d71e262b8b1
+updated: 2017-03-21T17:40:22.4513895-04:00
 imports:
 - name: github.com/coreos/etcd
   version: ace3a217b00c537c059df066f7f262669f900faa
@@ -21,6 +21,8 @@ imports:
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
   - codec/codecgen
+- name: google.golang.org/grpc
+  version: 231b4cfea0e79843053a33f5fe90bd4d84b23cd3
 - name: k8s.io/apimachinery
   version: c810e4931f2cf80a6f0a007f8ba9c05ef0165cee
 - name: k8s.io/apiserver
