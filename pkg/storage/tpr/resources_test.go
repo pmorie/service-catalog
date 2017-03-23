@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
@@ -32,7 +31,7 @@ func TestTPRKinds(t *testing.T) {
 			Kind:       "ThirdPartyResource",
 			APIVersion: "v1alpha1",
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: withGroupName("instance"),
 		},
 		Versions: []v1beta1.APIVersion{
@@ -45,7 +44,7 @@ func TestTPRKinds(t *testing.T) {
 			Kind:       "ThirdPartyResource",
 			APIVersion: "v1alpha1",
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: withGroupName("broker"),
 		},
 		Versions: []v1beta1.APIVersion{
@@ -58,7 +57,7 @@ func TestTPRKinds(t *testing.T) {
 			Kind:       "ThirdPartyResource",
 			APIVersion: "v1alpha1",
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: withGroupName("service-class"),
 		},
 		Versions: []v1beta1.APIVersion{
@@ -71,7 +70,7 @@ func TestTPRKinds(t *testing.T) {
 			Kind:       "ThirdPartyResource",
 			APIVersion: "v1alpha1",
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: withGroupName("binding"),
 		},
 		Versions: []v1beta1.APIVersion{
