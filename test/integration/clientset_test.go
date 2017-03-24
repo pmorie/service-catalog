@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	"k8s.io/kubernetes/pkg/api/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	// TODO: fix this upstream
 	// we shouldn't have to install things to use our own generated client.
@@ -38,8 +38,8 @@ import (
 	// our versioned client
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/diff"
 )
 
 // Used for testing instance parameters
