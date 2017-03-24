@@ -1,5 +1,21 @@
 package: github.com/kubernetes-incubator/service-catalog
 import:
+- package: github.com/emicklei/go-restful/swagger
+- package: github.com/PuerkitoBio/purell
+- package: github.com/spf13/pflag
+- package: github.com/PuerkitoBio/urlesc
+- package: github.com/go-openapi/jsonreference
+- package: github.com/go-openapi/jsonpointer
+- package: github.com/go-openapi/spec
+- package: github.com/go-openapi/swag
+- package: github.com/mailru/easyjson/jlexer
+- package: golang.org/x/text/secure/precis
+- package: github.com/gogo/protobuf/proto
+- package: golang.org/x/net/http2
+- package: github.com/golang/protobuf/proto
+- package: gopkg.in/natefinch/lumberjack.v2
+- package: github.com/pkg/errors
+- package: github.com/howeyc/gopass
 - package: github.com/coreos/etcd
   version: cc198e22d3b8fd7ec98304c95e68ee375be54589
 - package: google.golang.org/grpc
@@ -19,12 +35,13 @@ import:
 - package: github.com/kubernetes/repo-infra
   version: 4c4ae2e2e6994e887da16f3c31f495e10062b810
 - package: k8s.io/kubernetes
-  version: 77733c2afdcc4e85595e990d69d9b2765b1cf4e1
+  version: 9497139cb62015905ba5b3d11836f2b0c117ff80
 - package: k8s.io/client-go
+  version: 76153773eaa3a268131d3d993290a194a1370585
 - package: k8s.io/apimachinery
-  version: c810e4931f2cf80a6f0a007f8ba9c05ef0165cee
+  version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
 - package: k8s.io/apiserver
-  version: fb15924f43bd9a27225106aa70510c5e06cd2ef8
+  version: fbf5c43dfaa8eb5627bac6058e3bd51db8532cbb
 - package: github.com/ugorji/go
   subpackages:
   - codec/codecgen

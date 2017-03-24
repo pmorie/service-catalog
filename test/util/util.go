@@ -20,8 +20,9 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	v1alpha1servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
@@ -32,7 +33,7 @@ import (
 func WaitForBrokerCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string, condition v1alpha1.BrokerCondition) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
-			broker, err := client.Brokers().Get(name)
+			broker, err := client.Brokers().Get(name, v1.GetOptions{})
 			if nil != err {
 				return false, fmt.Errorf("error getting Broker %v: %v", name, err)
 			}
@@ -57,7 +58,7 @@ func WaitForBrokerCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1
 func WaitForBrokerToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
-			_, err := client.Brokers().Get(name)
+			_, err := client.Brokers().Get(name, v1.GetOptions{})
 			if nil == err {
 				return false, nil
 			}
@@ -76,7 +77,7 @@ func WaitForBrokerToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha
 func WaitForServiceClassToExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
-			_, err := client.ServiceClasses().Get(name)
+			_, err := client.ServiceClasses().Get(name, v1.GetOptions{})
 			if nil == err {
 				return true, nil
 			}
@@ -91,7 +92,7 @@ func WaitForServiceClassToExist(client v1alpha1servicecatalog.ServicecatalogV1al
 func WaitForServiceClassToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
-			_, err := client.ServiceClasses().Get(name)
+			_, err := client.ServiceClasses().Get(name, v1.GetOptions{})
 			if nil == err {
 				return false, nil
 			}
@@ -110,7 +111,7 @@ func WaitForServiceClassToNotExist(client v1alpha1servicecatalog.ServicecatalogV
 func WaitForInstanceCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string, condition v1alpha1.InstanceCondition) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
-			instance, err := client.Instances(namespace).Get(name)
+			instance, err := client.Instances(namespace).Get(name, v1.GetOptions{})
 			if nil != err {
 				return false, fmt.Errorf("error getting Instance %v/%v: %v", namespace, name, err)
 			}
@@ -135,7 +136,7 @@ func WaitForInstanceCondition(client v1alpha1servicecatalog.ServicecatalogV1alph
 func WaitForBindingCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string, condition v1alpha1.BindingCondition) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
-			binding, err := client.Bindings(namespace).Get(name)
+			binding, err := client.Bindings(namespace).Get(name, v1.GetOptions{})
 			if nil != err {
 				return false, fmt.Errorf("error getting Binding %v/%v: %v", namespace, name, err)
 			}
