@@ -64,6 +64,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 			StorageTypeString:       storageTypeStr,
 			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 			SecureServingOptions:    secureServingOptions,
+			InsecureServingOptions:  genericserveroptions.NewInsecureServingOptions(),
 			EtcdOptions: &server.EtcdOptions{
 				EtcdOptions: genericserveroptions.NewEtcdOptions(storagebackend.NewDefaultConfig(uuid.New(), api.Scheme, nil)),
 			},
