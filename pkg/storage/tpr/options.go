@@ -17,9 +17,9 @@ limitations under the License.
 package tpr
 
 import (
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
-	"k8s.io/kubernetes/pkg/registry/generic"
-	"k8s.io/kubernetes/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apiserver/pkg/registry/generic"
+	"k8s.io/client-go/kubernetes"
 )
 
 // Options is the set of options to create a new TPR storage interface
@@ -27,7 +27,7 @@ type Options struct {
 	HasNamespace     bool
 	RESTOptions      generic.RESTOptions
 	DefaultNamespace string
-	Client           clientset.Interface
+	Client           kubernetes.Interface
 	SingularKind     Kind
 	NewSingularFunc  func(string, string) runtime.Object
 	ListKind         Kind
