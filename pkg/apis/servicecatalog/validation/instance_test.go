@@ -19,7 +19,7 @@ package validation
 import (
 	"testing"
 
-	kapi "k8s.io/kubernetes/pkg/api"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
@@ -33,7 +33,7 @@ func TestValidateInstance(t *testing.T) {
 		{
 			name: "valid",
 			instance: &servicecatalog.Instance{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
@@ -47,7 +47,7 @@ func TestValidateInstance(t *testing.T) {
 		{
 			name: "missing namespace",
 			instance: &servicecatalog.Instance{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-instance",
 				},
 				Spec: servicecatalog.InstanceSpec{
@@ -60,7 +60,7 @@ func TestValidateInstance(t *testing.T) {
 		{
 			name: "missing serviceClassName",
 			instance: &servicecatalog.Instance{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
@@ -73,7 +73,7 @@ func TestValidateInstance(t *testing.T) {
 		{
 			name: "invalid serviceClassName",
 			instance: &servicecatalog.Instance{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
@@ -87,7 +87,7 @@ func TestValidateInstance(t *testing.T) {
 		{
 			name: "missing planName",
 			instance: &servicecatalog.Instance{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
@@ -100,7 +100,7 @@ func TestValidateInstance(t *testing.T) {
 		{
 			name: "invalid planName",
 			instance: &servicecatalog.Instance{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
