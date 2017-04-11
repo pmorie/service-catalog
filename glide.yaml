@@ -1,5 +1,8 @@
 package: github.com/kubernetes-incubator/service-catalog
 import:
+- package: github.com/openshift/origin
+  repo: git://github.com/sttts/origin
+  version: rebase-1.6.1
 - package: github.com/emicklei/go-restful/swagger
 - package: github.com/PuerkitoBio/purell
 - package: github.com/spf13/pflag

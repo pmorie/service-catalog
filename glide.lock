@@ -1,5 +1,5 @@
-hash: 5b53ab53ac08aeb4a1d3427cb2dba097c7864ad12477995320eb5ab28e40b7ed
-updated: 2017-04-04T17:12:42.659656376-04:00
+hash: e12968ad71fb42813ad1cd97ea1d0d8f2865c13dcf5930a1fc51d8a2d07cfa14
+updated: 2017-04-11T11:29:33.117811657-04:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -110,6 +110,9 @@ imports:
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
   - pbutil
+- name: github.com/openshift/origin
+  version: 15924586ced04dd369ab1c686383f3c2a74ab7d5
+  repo: git://github.com/sttts/origin
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pkg/errors
@@ -432,6 +435,4 @@ imports:
   - pkg/apis/componentconfig
   - pkg/util/configz
   - pkg/util/interrupt
-  - pkg/version
-  - pkg/version/verflag
 testImports: []
