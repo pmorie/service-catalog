@@ -280,6 +280,8 @@ func StartControllers(s *options.ControllerManagerServer,
 		glog.Fatal(err)
 	}
 
+	glog.Infof("Using informer resync interval %v", s.ResyncInterval)
+
 	// Launch service-catalog controller
 	if availableResources[schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "brokers"}] {
 		glog.V(5).Info("Creating shared informers")
