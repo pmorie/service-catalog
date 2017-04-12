@@ -140,15 +140,15 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				},
 			}
 
-			for _, container := range dc.Spec.Template.Spec.Containers {
-				if container.Env == nil {
-					container.Env = []kapi.EnvVar{}
+			for ii := range dc.Spec.Template.Spec.Containers {
+				if dc.Spec.Template.Spec.Containers[ii].Env == nil {
+					dc.Spec.Template.Spec.Containers[ii].Env = []kapi.EnvVar{}
 				}
 
 				glog.Infof("Adding env %v (from secret %v) to deploymentConfig %v/%v", env.Name, secretName, ns, dc.Name)
-				container.Env = append(container.Env, env)
+				dc.Spec.Template.Spec.Containers[ii].Env = append(dc.Spec.Template.Spec.Containers[ii].Env, env)
 
-				glog.Infof("Container env: %+v", container.Env)
+				glog.Infof("Container env: %+v", dc.Spec.Template.Spec.Containers[ii].Env)
 			}
 		}
 
