@@ -316,6 +316,9 @@ func StartControllers(s *options.ControllerManagerServer,
 			osClient,
 			serviceCatalogSharedInformers.Bindings(),
 		)
+		if err != nil {
+			return err
+		}
 
 		summitController.Run(stop)
 
