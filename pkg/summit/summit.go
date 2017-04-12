@@ -31,6 +31,7 @@ import (
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
 
 	osclient "github.com/openshift/origin/pkg/client"
+	_ "github.com/openshift/origin/pkg/deploy/api/install"
 )
 
 func NewController(
