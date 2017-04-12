@@ -24,26 +24,26 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
-	kapi "k8s.io/kubernetes/pkg/api"
+	kapi "k8s.io/kubernetes/pkg/api/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
 
-	osclient "github.com/openshift/origin/pkg/client"
 	_ "github.com/openshift/origin/pkg/deploy/api/install"
+	deployclient "github.com/openshift/origin/pkg/deploy/clientset/release_v3_6/typed/deploy/v1"
 )
 
 func NewController(
 	kubeClient kubernetes.Interface,
 	serviceCatalogClient servicecatalogclientset.ServicecatalogV1alpha1Interface,
-	osClient osclient.Interface,
+	deployClient deployclient.DeployV1Interface,
 	bindingInformer informers.BindingInformer,
 ) (Controller, error) {
 	controller := &controller{
 		kubeClient:           kubeClient,
 		serviceCatalogClient: serviceCatalogClient,
-		osClient:             osClient,
+		deployClient:         deployClient,
 	}
 
 	bindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -64,7 +64,7 @@ type Controller interface {
 type controller struct {
 	kubeClient           kubernetes.Interface
 	serviceCatalogClient servicecatalogclientset.ServicecatalogV1alpha1Interface
-	osClient             osclient.Interface
+	deployClient         deployclient.DeployV1Interface
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -112,7 +112,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		glog.Errorf("Error getting secret %v/%v", ns, secretName)
 	}
 
-	deploymentConfigs, err := c.osClient.DeploymentConfigs(ns).List(metav1.ListOptions{})
+	deploymentConfigs, err := c.deployClient.DeploymentConfigs(ns).List(metav1.ListOptions{})
 	if err != nil {
 		glog.Errorf("Error getting deployments for namespace %v", ns)
 	}
@@ -143,9 +143,13 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			}
 		}
 
+		if len(dc.Annotations) == 0 {
+			dc.ObjectMeta.Annotations = map[string]string{}
+		}
+
 		dc.Annotations[specialAnnotationKey] = "set"
 
-		_, err := c.osClient.DeploymentConfigs(ns).Update(&dc)
+		_, err := c.deployClient.DeploymentConfigs(ns).Update(&dc)
 		if err != nil {
 			glog.Errorf("Error updating deploymentConfig %v/%v", ns, dc.Name)
 		}

@@ -39,7 +39,7 @@ import (
 	"k8s.io/apiserver/pkg/server/healthz"
 	"k8s.io/kubernetes/pkg/util/configz"
 
-	osclient "github.com/openshift/origin/pkg/client"
+	deployclient "github.com/openshift/origin/pkg/deploy/clientset/release_v3_6/typed/deploy/v1"
 
 	// The API groups for our API must be installed before we can use the
 	// client to work with them.  This needs to be done once per process; this
@@ -275,7 +275,7 @@ func StartControllers(s *options.ControllerManagerServer,
 		glog.Fatal(err)
 	}
 
-	osClient, err := osclient.New(coreKubeconfig)
+	deployClient, err := deployclient.NewForConfig(coreKubeconfig)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -313,7 +313,7 @@ func StartControllers(s *options.ControllerManagerServer,
 		// start summit controller
 		summitController, err := summit.NewController(coreClient,
 			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1alpha1(),
-			osClient,
+			deployClient,
 			serviceCatalogSharedInformers.Bindings(),
 		)
 		if err != nil {
