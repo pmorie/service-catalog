@@ -320,7 +320,7 @@ func StartControllers(s *options.ControllerManagerServer,
 			return err
 		}
 
-		summitController.Run(stop)
+		go summitController.Run(stop)
 
 		glog.V(1).Info("Starting shared informers")
 		informerFactory.Start(stop)
