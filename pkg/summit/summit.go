@@ -17,6 +17,8 @@ limitations under the License.
 package summit
 
 import (
+	"strings"
+
 	"github.com/golang/glog"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -125,8 +127,9 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		}
 
 		for key := range secret.Data {
+			envKey := strings.Replace(key, "-", "_", -1)
 			env := kapi.EnvVar{
-				Name: key,
+				Name: envKey,
 				ValueFrom: &kapi.EnvVarSource{
 					SecretKeyRef: &kapi.SecretKeySelector{
 						LocalObjectReference: kapi.LocalObjectReference{
@@ -138,8 +141,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			}
 
 			for _, container := range dc.Spec.Template.Spec.Containers {
+				if container.Env == nil {
+					container.Env = []kapi.EnvVar{}
+				}
+
 				glog.Infof("Adding env %v (from secret %v) to deploymentConfig %v/%v", env.Name, secretName, ns, dc.Name)
 				container.Env = append(container.Env, env)
+
+				glog.Infof("Container env: %+v", container.Env)
 			}
 		}
 
@@ -152,6 +161,8 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		_, err := c.deployClient.DeploymentConfigs(ns).Update(&dc)
 		if err != nil {
 			glog.Errorf("Error updating deploymentConfig %v/%v", ns, dc.Name)
+		} else {
+			glog.Infof("Successfully updated deploymentConfig %v/%v", ns, dc.Name)
 		}
 	}
 }
