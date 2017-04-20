@@ -1,12 +1,18 @@
-hash: 5b53ab53ac08aeb4a1d3427cb2dba097c7864ad12477995320eb5ab28e40b7ed
-updated: 2017-04-04T17:12:42.659656376-04:00
+hash: e12968ad71fb42813ad1cd97ea1d0d8f2865c13dcf5930a1fc51d8a2d07cfa14
+updated: 2017-04-11T14:40:41.530230853-04:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
+- name: github.com/Azure/go-ansiterm
+  version: fa152c58bc15761d0200cb75fe958b89a9d4888e
+  subpackages:
+  - winterm
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
   - quantile
+- name: github.com/blang/semver
+  version: 31b736133b98f26d5e078ec9eb591666edfd091f
 - name: github.com/coreos/etcd
   version: cc198e22d3b8fd7ec98304c95e68ee375be54589
   subpackages:
@@ -37,8 +43,49 @@ imports:
 - name: github.com/docker/distribution
   version: cd27f179f2c10c5d300e6d09025b538c475b0d51
   subpackages:
+  - context
   - digest
+  - manifest
+  - manifest/schema1
+  - manifest/schema2
   - reference
+  - uuid
+- name: github.com/docker/docker
+  version: 12601e3559ab880fc29c4fc2ad7031e74c931ca9
+  subpackages:
+  - api/types
+  - api/types/blkiodev
+  - api/types/container
+  - api/types/filters
+  - api/types/mount
+  - api/types/network
+  - api/types/registry
+  - api/types/strslice
+  - api/types/swarm
+  - api/types/versions
+  - opts
+  - pkg/archive
+  - pkg/fileutils
+  - pkg/homedir
+  - pkg/idtools
+  - pkg/ioutils
+  - pkg/jsonlog
+  - pkg/jsonmessage
+  - pkg/longpath
+  - pkg/pools
+  - pkg/promise
+  - pkg/stdcopy
+  - pkg/system
+  - pkg/term
+  - pkg/term/windows
+- name: github.com/docker/go-connections
+  version: e15c02316c12de00874640cd76311849de2aeed5
+  subpackages:
+  - nat
+- name: github.com/docker/go-units
+  version: 0dadbb0345b35ec7ef35e228dabb8de89a65bf52
+- name: github.com/docker/libtrust
+  version: aabc10ec26b754e797f9028f4589c5b7bd90dc20
 - name: github.com/elazarl/go-bindata-assetfs
   version: 3dcc96556217539f50599357fb481ac0dc7439b9
 - name: github.com/emicklei/go-restful
@@ -48,6 +95,10 @@ imports:
   - swagger
 - name: github.com/evanphx/json-patch
   version: 465937c80b3c07a7c7ad20cc934898646a91c1de
+- name: github.com/exponent-io/jsonpath
+  version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
+- name: github.com/fsouza/go-dockerclient
+  version: e24e809e9db395f1e3c85af1b88f2002023610f5
 - name: github.com/ghodss/yaml
   version: 04f313413ffd65ce25f2541bfd2b2ceec5c0908c
 - name: github.com/go-openapi/jsonpointer
@@ -88,6 +139,8 @@ imports:
   - runtime
   - runtime/internal
   - utilities
+- name: github.com/hashicorp/go-cleanhttp
+  version: 3573b8b52aa7b37b9358d966a898feb387f62437
 - name: github.com/howeyc/gopass
   version: 3ca23474a7c7203e0a0a070fd33508f6efdb9b3d
 - name: github.com/imdario/mergo
@@ -110,6 +163,38 @@ imports:
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
   - pbutil
+- name: github.com/Microsoft/go-winio
+  version: fff283ad5116362ca252298cfc9b95828956d85d
+- name: github.com/Nvveen/Gotty
+  version: cd527374f1e5bff4938207604a14f2e38a9cf512
+- name: github.com/opencontainers/runc
+  version: 50401b5b4c2e01e4f1372b73a021742deeaf4e2d
+  subpackages:
+  - libcontainer/system
+  - libcontainer/user
+- name: github.com/openshift/origin
+  version: 2ed75f8edddba6ca404133900ed83491b87e8d3e
+  repo: git://github.com/sttts/origin
+  subpackages:
+  - pkg/api/latest
+  - pkg/authorization/api
+  - pkg/build/api
+  - pkg/client
+  - pkg/deploy/api
+  - pkg/image/api
+  - pkg/image/reference
+  - pkg/oauth/api
+  - pkg/project/api
+  - pkg/quota/api
+  - pkg/quota/util
+  - pkg/route/api
+  - pkg/sdn/api
+  - pkg/security/api
+  - pkg/template/api
+  - pkg/user/api
+  - pkg/user/api/validation
+  - pkg/util/namer
+  - pkg/version
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pkg/errors
@@ -135,6 +220,8 @@ imports:
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/satori/go.uuid
   version: b061729afc07e77a8aa4fad0a2fd840958f1942a
+- name: github.com/Sirupsen/logrus
+  version: 10f801ebc38b33738c9d17d50860f484a0988ff5
 - name: github.com/spf13/cobra
   version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - name: github.com/spf13/pflag
@@ -152,6 +239,7 @@ imports:
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
+  - context/ctxhttp
   - html
   - html/atom
   - http2
@@ -165,6 +253,7 @@ imports:
   version: 8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9
   subpackages:
   - unix
+  - windows
 - name: golang.org/x/text
   version: 2910a502d2bf9e43193af9d68ca516529614eed3
   subpackages:
@@ -429,9 +518,49 @@ imports:
   version: 9497139cb62015905ba5b3d11836f2b0c117ff80
   subpackages:
   - pkg/api
+  - pkg/api/pod
+  - pkg/api/service
+  - pkg/api/util
+  - pkg/api/v1
+  - pkg/api/validation
+  - pkg/apis/apps
+  - pkg/apis/apps/v1beta1
+  - pkg/apis/authentication
+  - pkg/apis/authentication/v1
+  - pkg/apis/authentication/v1beta1
+  - pkg/apis/authorization
+  - pkg/apis/authorization/v1
+  - pkg/apis/authorization/v1beta1
+  - pkg/apis/autoscaling
+  - pkg/apis/autoscaling/v1
+  - pkg/apis/autoscaling/v2alpha1
+  - pkg/apis/batch
+  - pkg/apis/batch/v1
+  - pkg/apis/batch/v2alpha1
+  - pkg/apis/certificates
+  - pkg/apis/certificates/v1beta1
   - pkg/apis/componentconfig
+  - pkg/apis/extensions
+  - pkg/apis/extensions/v1beta1
+  - pkg/apis/policy
+  - pkg/apis/policy/v1beta1
+  - pkg/apis/rbac
+  - pkg/apis/rbac/v1alpha1
+  - pkg/apis/rbac/v1beta1
+  - pkg/apis/settings
+  - pkg/apis/settings/v1alpha1
+  - pkg/apis/storage
+  - pkg/apis/storage/v1
+  - pkg/apis/storage/v1beta1
+  - pkg/capabilities
+  - pkg/client/clientset_generated/clientset/scheme
+  - pkg/client/clientset_generated/clientset/typed/extensions/v1beta1
+  - pkg/client/retry
+  - pkg/features
+  - pkg/security/apparmor
+  - pkg/util
   - pkg/util/configz
   - pkg/util/interrupt
-  - pkg/version
-  - pkg/version/verflag
+  - pkg/util/net/sets
+  - pkg/util/parsers
 testImports: []

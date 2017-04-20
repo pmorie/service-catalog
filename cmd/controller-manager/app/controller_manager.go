@@ -39,6 +39,8 @@ import (
 	"k8s.io/apiserver/pkg/server/healthz"
 	"k8s.io/kubernetes/pkg/util/configz"
 
+	deployclient "github.com/openshift/origin/pkg/deploy/clientset/release_v3_6/typed/deploy/v1"
+
 	// The API groups for our API must be installed before we can use the
 	// client to work with them.  This needs to be done once per process; this
 	// is the point at which we handle this for the controller-manager
@@ -52,6 +54,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/summit"
 
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -272,6 +275,13 @@ func StartControllers(s *options.ControllerManagerServer,
 		glog.Fatal(err)
 	}
 
+	deployClient, err := deployclient.NewForConfig(coreKubeconfig)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
+	glog.Infof("Using informer resync interval %v", s.ResyncInterval)
+
 	// Launch service-catalog controller
 	if availableResources[schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "brokers"}] {
 		glog.V(5).Info("Creating shared informers; resync interval: %v", s.ResyncInterval)
@@ -302,6 +312,18 @@ func StartControllers(s *options.ControllerManagerServer,
 
 		glog.V(5).Info("Running controller")
 		go serviceCatalogController.Run(stop)
+
+		// start summit controller
+		summitController, err := summit.NewController(coreClient,
+			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1alpha1(),
+			deployClient,
+			serviceCatalogSharedInformers.Bindings(),
+		)
+		if err != nil {
+			return err
+		}
+
+		go summitController.Run(stop)
 
 		glog.V(1).Info("Starting shared informers")
 		informerFactory.Start(stop)
