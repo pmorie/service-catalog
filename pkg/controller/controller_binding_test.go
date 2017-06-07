@@ -677,29 +677,6 @@ func TestReconcileBindingDeleteWithPodPreset(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
-	kubeActions := fakeKubeClient.Actions()
-	// The two actions should be:
-	// 0. Deleting the secret
-	assertNumberOfActions(t, kubeActions, 2)
-
-	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
-	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
-	}
-
-	if e, a := binding.Spec.AlphaPodPresetTemplate.Name, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
-	}
-
-	deleteAction = kubeActions[1].(clientgotesting.DeleteActionImpl)
-	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
-	}
-
-	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
-	}
-
 	actions := fakeCatalogClient.Actions()
 	// The three actions should be:
 	// 0. Updating the ready condition
@@ -714,6 +691,30 @@ func TestReconcileBindingDeleteWithPodPreset(t *testing.T) {
 
 	updatedBinding = assertUpdateStatus(t, actions[2], binding)
 	assertEmptyFinalizers(t, updatedBinding)
+
+	kubeActions := fakeKubeClient.Actions()
+	// The two actions should be:
+	// 0. Deleting the secret
+	// 1. Deleting the pod preset
+	assertNumberOfActions(t, kubeActions, 2)
+
+	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
+	if e, a := "delete", deleteAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+	}
+
+	if e, a := binding.Spec.AlphaPodPresetTemplate.Name, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of pod preset: expected %v, got %v", e, a)
+	}
+
+	deleteAction = kubeActions[1].(clientgotesting.DeleteActionImpl)
+	if e, a := "delete", deleteAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+	}
+
+	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+	}
 
 	if _, ok := fakeBrokerClient.BindingClient.Bindings[bindingsMapKey]; ok {
 		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
