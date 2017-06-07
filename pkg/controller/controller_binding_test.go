@@ -677,6 +677,14 @@ func TestReconcileBindingDeleteWithPodPreset(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeNormal + " " + successUnboundReason + " " + "This binding was deleted successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+
 	actions := fakeCatalogClient.Actions()
 	// The three actions should be:
 	// 0. Updating the ready condition
@@ -720,13 +728,6 @@ func TestReconcileBindingDeleteWithPodPreset(t *testing.T) {
 		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
 	}
 
-	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
-
-	expectedEvent := api.EventTypeNormal + " " + successUnboundReason + " " + "This binding was deleted successfully"
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
-	}
 }
 
 func TestUpdateBindingCondition(t *testing.T) {
