@@ -675,7 +675,10 @@ func TestReconcileBindingDeleteWithPodPreset(t *testing.T) {
 		return true, binding, nil
 	})
 
-	testController.reconcileBinding(binding)
+	err := testController.reconcileBinding(binding)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
