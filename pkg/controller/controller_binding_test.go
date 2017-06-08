@@ -20,10 +20,10 @@ import (
 	// "encoding/json"
 	// "errors"
 	// "fmt"
-	// "reflect"
+	"reflect"
 	// "strings"
 	"testing"
-	// "time"
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
@@ -740,132 +740,132 @@ func TestReconcileBindingDeleteWithPodPreset(t *testing.T) {
 
 }
 
-// func TestUpdateBindingCondition(t *testing.T) {
-// 	getTestBindingWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Binding {
-// 		instance := getTestBinding()
-// 		instance.Status = v1alpha1.BindingStatus{
-// 			Conditions: []v1alpha1.BindingCondition{{
-// 				Type:               v1alpha1.BindingConditionReady,
-// 				Status:             status,
-// 				Message:            "message",
-// 				LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
-// 			}},
-// 		}
+func TestUpdateBindingCondition(t *testing.T) {
+	getTestBindingWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Binding {
+		instance := getTestBinding()
+		instance.Status = v1alpha1.BindingStatus{
+			Conditions: []v1alpha1.BindingCondition{{
+				Type:               v1alpha1.BindingConditionReady,
+				Status:             status,
+				Message:            "message",
+				LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+			}},
+		}
 
-// 		return instance
-// 	}
+		return instance
+	}
 
-// 	cases := []struct {
-// 		name                  string
-// 		input                 *v1alpha1.Binding
-// 		status                v1alpha1.ConditionStatus
-// 		reason                string
-// 		message               string
-// 		transitionTimeChanged bool
-// 	}{
+	cases := []struct {
+		name                  string
+		input                 *v1alpha1.Binding
+		status                v1alpha1.ConditionStatus
+		reason                string
+		message               string
+		transitionTimeChanged bool
+	}{
 
-// 		{
-// 			name:                  "initially unset",
-// 			input:                 getTestBinding(),
-// 			status:                v1alpha1.ConditionFalse,
-// 			transitionTimeChanged: true,
-// 		},
-// 		{
-// 			name:                  "not ready -> not ready",
-// 			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
-// 			status:                v1alpha1.ConditionFalse,
-// 			transitionTimeChanged: false,
-// 		},
-// 		{
-// 			name:                  "not ready -> not ready, message and reason change",
-// 			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
-// 			status:                v1alpha1.ConditionFalse,
-// 			reason:                "foo",
-// 			message:               "bar",
-// 			transitionTimeChanged: false,
-// 		},
-// 		{
-// 			name:                  "not ready -> ready",
-// 			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
-// 			status:                v1alpha1.ConditionTrue,
-// 			transitionTimeChanged: true,
-// 		},
-// 		{
-// 			name:                  "ready -> ready",
-// 			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
-// 			status:                v1alpha1.ConditionTrue,
-// 			transitionTimeChanged: false,
-// 		},
-// 		{
-// 			name:                  "ready -> not ready",
-// 			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
-// 			status:                v1alpha1.ConditionFalse,
-// 			transitionTimeChanged: true,
-// 		},
-// 	}
+		{
+			name:                  "initially unset",
+			input:                 getTestBinding(),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "not ready -> not ready",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "not ready -> not ready, message and reason change",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionFalse,
+			reason:                "foo",
+			message:               "bar",
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "not ready -> ready",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionTrue,
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "ready -> ready",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
+			status:                v1alpha1.ConditionTrue,
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "ready -> not ready",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: true,
+		},
+	}
 
-// 	for _, tc := range cases {
-// 		_, fakeCatalogClient, _, testController, _ := newTestController(t)
+	for _, tc := range cases {
+		_, fakeCatalogClient, _, testController, _ := newTestController(t)
 
-// 		clone, err := api.Scheme.DeepCopy(tc.input)
-// 		if err != nil {
-// 			t.Errorf("%v: deep copy failed", tc.name)
-// 			continue
-// 		}
-// 		inputClone := clone.(*v1alpha1.Binding)
+		clone, err := api.Scheme.DeepCopy(tc.input)
+		if err != nil {
+			t.Errorf("%v: deep copy failed", tc.name)
+			continue
+		}
+		inputClone := clone.(*v1alpha1.Binding)
 
-// 		err = testController.updateBindingCondition(tc.input, v1alpha1.BindingConditionReady, tc.status, tc.reason, tc.message)
-// 		if err != nil {
-// 			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
-// 			continue
-// 		}
+		err = testController.updateBindingCondition(tc.input, v1alpha1.BindingConditionReady, tc.status, tc.reason, tc.message)
+		if err != nil {
+			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
+			continue
+		}
 
-// 		if !reflect.DeepEqual(tc.input, inputClone) {
-// 			t.Errorf("%v: updating broker condition mutated input: expected %v, got %v", tc.name, inputClone, tc.input)
-// 			continue
-// 		}
+		if !reflect.DeepEqual(tc.input, inputClone) {
+			t.Errorf("%v: updating broker condition mutated input: expected %v, got %v", tc.name, inputClone, tc.input)
+			continue
+		}
 
-// 		actions := fakeCatalogClient.Actions()
-// 		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
-// 			continue
-// 		}
+		actions := fakeCatalogClient.Actions()
+		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
+			continue
+		}
 
-// 		updatedBinding, ok := expectUpdateStatus(t, tc.name, actions[0], tc.input)
-// 		if !ok {
-// 			continue
-// 		}
+		updatedBinding, ok := expectUpdateStatus(t, tc.name, actions[0], tc.input)
+		if !ok {
+			continue
+		}
 
-// 		updateActionObject, ok := updatedBinding.(*v1alpha1.Binding)
-// 		if !ok {
-// 			t.Errorf("%v: couldn't convert to binding", tc.name)
-// 			continue
-// 		}
+		updateActionObject, ok := updatedBinding.(*v1alpha1.Binding)
+		if !ok {
+			t.Errorf("%v: couldn't convert to binding", tc.name)
+			continue
+		}
 
-// 		var initialTs metav1.Time
-// 		if len(inputClone.Status.Conditions) != 0 {
-// 			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
-// 		}
+		var initialTs metav1.Time
+		if len(inputClone.Status.Conditions) != 0 {
+			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
+		}
 
-// 		if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-// 			t.Errorf("%v: expected %v condition(s), got %v", tc.name, e, a)
-// 		}
+		if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
+			t.Errorf("%v: expected %v condition(s), got %v", tc.name, e, a)
+		}
 
-// 		outputCondition := updateActionObject.Status.Conditions[0]
-// 		newTs := outputCondition.LastTransitionTime
+		outputCondition := updateActionObject.Status.Conditions[0]
+		newTs := outputCondition.LastTransitionTime
 
-// 		if tc.transitionTimeChanged && initialTs == newTs {
-// 			t.Errorf("%v: transition time didn't change when it should have", tc.name)
-// 			continue
-// 		} else if !tc.transitionTimeChanged && initialTs != newTs {
-// 			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
-// 			continue
-// 		}
-// 		if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
-// 			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
-// 			continue
-// 		}
-// 		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
-// 			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
-// 		}
-// 	}
-// }
+		if tc.transitionTimeChanged && initialTs == newTs {
+			t.Errorf("%v: transition time didn't change when it should have", tc.name)
+			continue
+		} else if !tc.transitionTimeChanged && initialTs != newTs {
+			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
+			continue
+		}
+		if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
+			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
+			continue
+		}
+		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
+			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
+		}
+	}
+}
