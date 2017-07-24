@@ -179,7 +179,6 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.ServiceCatalogIn
 	if response.Async {
 		glog.V(5).Infof("Received asynchronous de-provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
 		if response.OperationKey != nil && *response.OperationKey != "" {
-			glog.Error("setting last operation key")
 			key := string(*response.OperationKey)
 			toUpdate.Status.LastOperation = &key
 		}
@@ -200,6 +199,7 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.ServiceCatalogIn
 			return err
 		}
 	} else {
+		glog.Infof("booo")
 		setInstanceCondition(
 			toUpdate,
 			v1alpha1.InstanceConditionReady,
@@ -411,7 +411,6 @@ func (c *controller) reconcileInstance(instance *v1alpha1.ServiceCatalogInstance
 	}
 
 	if response.DashboardURL != nil && *response.DashboardURL != "" {
-		glog.Infof("setting dashboard url to %v", *response.DashboardURL)
 		url := *response.DashboardURL
 		toUpdate.Status.DashboardURL = &url
 	}
@@ -427,12 +426,6 @@ func (c *controller) reconcileInstance(instance *v1alpha1.ServiceCatalogInstance
 			key := string(*response.OperationKey)
 			toUpdate.Status.LastOperation = &key
 		}
-
-		clone, err := api.Scheme.DeepCopy(instance)
-		if err != nil {
-			return err
-		}
-		toUpdate := clone.(*v1alpha1.ServiceCatalogInstance)
 
 		// Tag this instance as having an ongoing async operation so we can enforce
 		// no other operations against it can start.

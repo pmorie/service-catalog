@@ -581,8 +581,8 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 		t.Fatalf("got key as %q expected %q", actualKey, expectedKey)
 	}
 	assertAsyncOpInProgressTrue(t, updatedInstance)
-	assertInstanceLastOperation(t, updatedInstance, testOperation)
 	assertInstanceDashboardURL(t, updatedInstance, testDashboardURL)
+	assertInstanceLastOperation(t, updatedInstance, testOperation)
 }
 
 func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
