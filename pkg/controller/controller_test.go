@@ -436,9 +436,9 @@ func getTestInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Servic
 	return instance
 }
 
-func getTestInstanceWithFailedStatus() *v1alpha1.Instance {
+func getTestInstanceWithFailedStatus() *v1alpha1.ServiceCatalogInstance {
 	instance := getTestInstance()
-	instance.Status = v1alpha1.InstanceStatus{
+	instance.Status = v1alpha1.ServiceCatalogInstanceStatus{
 		Conditions: []v1alpha1.InstanceCondition{{
 			Type:   v1alpha1.InstanceConditionFailed,
 			Status: v1alpha1.ConditionTrue,

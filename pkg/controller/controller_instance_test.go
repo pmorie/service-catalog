@@ -396,8 +396,8 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 
@@ -430,7 +430,7 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 	updatedObject := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyFalse(t, updatedObject)
-	updatedInstance, ok := updatedObject.(*v1alpha1.Instance)
+	updatedInstance, ok := updatedObject.(*v1alpha1.ServiceCatalogInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1alpha1.Instance")
 	}
@@ -802,8 +802,8 @@ func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
 func TestReconcileInstanceWithFailureCondition(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceWithFailedStatus()
 
@@ -1227,9 +1227,9 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 }
 
 func TestSetInstanceCondition(t *testing.T) {
-	instanceWithCondition := func(condition *v1alpha1.InstanceCondition) *v1alpha1.Instance {
+	instanceWithCondition := func(condition *v1alpha1.InstanceCondition) *v1alpha1.ServiceCatalogInstance {
 		instance := getTestInstance()
-		instance.Status = v1alpha1.InstanceStatus{
+		instance.Status = v1alpha1.ServiceCatalogInstanceStatus{
 			Conditions: []v1alpha1.InstanceCondition{*condition},
 		}
 
@@ -1279,15 +1279,15 @@ func TestSetInstanceCondition(t *testing.T) {
 	// to the test case result.
 	cases := []struct {
 		name      string
-		input     *v1alpha1.Instance
+		input     *v1alpha1.ServiceCatalogInstance
 		condition *v1alpha1.InstanceCondition
-		result    *v1alpha1.Instance
+		result    *v1alpha1.ServiceCatalogInstance
 	}{
 		{
 			name:      "new ready condition",
 			input:     getTestInstance(),
 			condition: readyFalse(),
-			result: func() *v1alpha1.Instance {
+			result: func() *v1alpha1.ServiceCatalogInstance {
 				i := instanceWithCondition(readyFalse())
 				i.Status.Conditions[0].LastTransitionTime = newTs
 				return i
@@ -1297,7 +1297,7 @@ func TestSetInstanceCondition(t *testing.T) {
 			name:      "not ready -> not ready",
 			input:     instanceWithCondition(readyFalse()),
 			condition: readyTrue(),
-			result: func() *v1alpha1.Instance {
+			result: func() *v1alpha1.ServiceCatalogInstance {
 				i := instanceWithCondition(readyTrue())
 				i.Status.Conditions[0].LastTransitionTime = newTs
 				return i
@@ -1313,7 +1313,7 @@ func TestSetInstanceCondition(t *testing.T) {
 			name:      "not ready -> ready",
 			input:     instanceWithCondition(readyFalse()),
 			condition: readyTrue(),
-			result: func() *v1alpha1.Instance {
+			result: func() *v1alpha1.ServiceCatalogInstance {
 				i := instanceWithCondition(readyTrue())
 				i.Status.Conditions[0].LastTransitionTime = newTs
 				return i
@@ -1329,7 +1329,7 @@ func TestSetInstanceCondition(t *testing.T) {
 			name:      "ready -> not ready",
 			input:     instanceWithCondition(readyTrue()),
 			condition: readyFalse(),
-			result: func() *v1alpha1.Instance {
+			result: func() *v1alpha1.ServiceCatalogInstance {
 				i := instanceWithCondition(readyFalse())
 				i.Status.Conditions[0].LastTransitionTime = newTs
 				return i
@@ -1339,7 +1339,7 @@ func TestSetInstanceCondition(t *testing.T) {
 			name:      "not ready + failed",
 			input:     instanceWithCondition(readyFalse()),
 			condition: failedTrue(),
-			result: func() *v1alpha1.Instance {
+			result: func() *v1alpha1.ServiceCatalogInstance {
 				i := instanceWithCondition(readyFalse())
 				i.Status.Conditions = append(i.Status.Conditions, *failedTrue())
 				i.Status.Conditions[1].LastTransitionTime = newTs

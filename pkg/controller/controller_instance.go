@@ -116,7 +116,7 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.ServiceCatalogIn
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.Instance)
+	toUpdate := clone.(*v1alpha1.ServiceCatalogInstance)
 
 	glog.V(4).Infof("Finalizing Instance %v/%v", instance.Namespace, instance.Name)
 
@@ -179,6 +179,7 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.ServiceCatalogIn
 	if response.Async {
 		glog.V(5).Infof("Received asynchronous de-provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
 		if response.OperationKey != nil && *response.OperationKey != "" {
+			glog.Error("setting last operation key")
 			key := string(*response.OperationKey)
 			toUpdate.Status.LastOperation = &key
 		}
@@ -225,7 +226,7 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.ServiceCatalogIn
 
 // isInstanceFailed returns whether the instance has a failed condition with
 // status true.
-func isInstanceFailed(instance *v1alpha1.Instance) bool {
+func isInstanceFailed(instance *v1alpha1.ServiceCatalogInstance) bool {
 	for _, condition := range instance.Status.Conditions {
 		if condition.Type == v1alpha1.InstanceConditionFailed && condition.Status == v1alpha1.ConditionTrue {
 			return true
@@ -303,7 +304,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.ServiceCatalogInstance
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.Instance)
+	toUpdate := clone.(*v1alpha1.ServiceCatalogInstance)
 
 	var parameters map[string]interface{}
 	if instance.Spec.Parameters != nil {
@@ -688,7 +689,7 @@ func findServicePlan(name string, plans []v1alpha1.ServiceCatalogServicePlan) *v
 //
 // Note: objects coming from informers should never be mutated; always pass a
 // deep copy as the instance parameter.
-func setInstanceCondition(toUpdate *v1alpha1.Instance,
+func setInstanceCondition(toUpdate *v1alpha1.ServiceCatalogInstance,
 	conditionType v1alpha1.InstanceConditionType,
 	status v1alpha1.ConditionStatus,
 	reason,
@@ -698,7 +699,7 @@ func setInstanceCondition(toUpdate *v1alpha1.Instance,
 
 // setInstanceConditionInternal is setInstanceCondition but allows the time to
 // be parameterized for testing.
-func setInstanceConditionInternal(toUpdate *v1alpha1.Instance,
+func setInstanceConditionInternal(toUpdate *v1alpha1.ServiceCatalogInstance,
 	conditionType v1alpha1.InstanceConditionType,
 	status v1alpha1.ConditionStatus,
 	reason,
@@ -744,9 +745,9 @@ func setInstanceConditionInternal(toUpdate *v1alpha1.Instance,
 //
 // Note: objects coming from informers should never be mutated; the instance
 // passed to this method should always be a deep copy.
-func (c *controller) updateInstanceStatus(toUpdate *v1alpha1.Instance) error {
+func (c *controller) updateInstanceStatus(toUpdate *v1alpha1.ServiceCatalogInstance) error {
 	glog.V(4).Infof("Updating status for Instance %v/%v", toUpdate.Namespace, toUpdate.Name)
-	_, err := c.serviceCatalogClient.Instances(toUpdate.Namespace).UpdateStatus(toUpdate)
+	_, err := c.serviceCatalogClient.ServiceCatalogInstances(toUpdate.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Errorf("Failed to update status for Instance %v/%v: %v", toUpdate.Namespace, toUpdate.Name, err)
 	}
@@ -757,7 +758,7 @@ func (c *controller) updateInstanceStatus(toUpdate *v1alpha1.Instance) error {
 // updateInstanceCondition updates the given condition for the given Instance
 // with the given status, reason, and message.
 func (c *controller) updateInstanceCondition(
-	instance *v1alpha1.Instance,
+	instance *v1alpha1.ServiceCatalogInstance,
 	conditionType v1alpha1.InstanceConditionType,
 	status v1alpha1.ConditionStatus,
 	reason,
@@ -767,7 +768,7 @@ func (c *controller) updateInstanceCondition(
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.Instance)
+	toUpdate := clone.(*v1alpha1.ServiceCatalogInstance)
 
 	setInstanceCondition(toUpdate, conditionType, status, reason, message)
 
