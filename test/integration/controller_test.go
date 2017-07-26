@@ -17,6 +17,7 @@ limitations under the License.
 package integration
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -225,6 +226,144 @@ func TestBasicFlows(t *testing.T) {
 
 	//-----------------
 	// End binding test
+
+	err = client.ServiceCatalogInstances(testNamespace).Delete(testInstanceName, &metav1.DeleteOptions{})
+	if nil != err {
+		t.Fatalf("instance delete should have been accepted: %v", err)
+	}
+
+	err = util.WaitForInstanceToNotExist(client, testNamespace, testInstanceName)
+	if err != nil {
+		t.Fatalf("error waiting for instance to be deleted: %v", err)
+	}
+
+	//-----------------
+	// End provision test
+
+	// Delete the broker
+	err = client.ServiceCatalogBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	if nil != err {
+		t.Fatalf("broker should be deleted (%s)", err)
+	}
+
+	err = util.WaitForServiceClassToNotExist(client, testServiceClassName)
+	if err != nil {
+		t.Fatalf("error waiting for ServiceClass to not exist: %v", err)
+	}
+
+	err = util.WaitForBrokerToNotExist(client, testBrokerName)
+	if err != nil {
+		t.Fatalf("error waiting for Broker to not exist: %v", err)
+	}
+}
+
+// TestProvisionFailure tests that the controller correctly handles errors
+// from the broker that indicate the a provision operation failed.
+//
+// TODO: additional tests for scenarios like this will be needed once we
+// implement orphan mitigation.
+func TestProvisionFailure(t *testing.T) {
+	_, catalogClient, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
+		CatalogReaction: &fakeosb.CatalogReaction{
+			Response: &osb.CatalogResponse{
+				Services: []osb.Service{
+					{
+						Name:        testServiceClassName,
+						ID:          "12345",
+						Description: "a test service",
+						Bindable:    true,
+						Plans: []osb.Plan{
+							{
+								Name:        testPlanName,
+								Free:        truePtr(),
+								ID:          "34567",
+								Description: "a test plan",
+							},
+						},
+					},
+				},
+			},
+		},
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Error: osb.HTTPStatusCodeError{
+				StatusCode:   http.StatusConflict,
+				ErrorMessage: strPtr("OutOfQuota"),
+				Description:  strPtr("You're out of quota!"),
+			},
+		},
+		DeprovisionReaction: &fakeosb.DeprovisionReaction{
+			Response: &osb.DeprovisionResponse{
+				Async: false,
+			},
+		},
+	})
+	defer shutdownServer()
+
+	client := catalogClient.ServicecatalogV1alpha1()
+
+	broker := &v1alpha1.ServiceCatalogBroker{
+		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
+		Spec: v1alpha1.ServiceCatalogBrokerSpec{
+			URL: testBrokerURL,
+		},
+	}
+
+	_, err := client.ServiceCatalogBrokers().Create(broker)
+	if nil != err {
+		t.Fatalf("error creating the broker %q (%q)", broker, err)
+	}
+
+	err = util.WaitForBrokerCondition(client,
+		testBrokerName,
+		v1alpha1.BrokerCondition{
+			Type:   v1alpha1.BrokerConditionReady,
+			Status: v1alpha1.ConditionTrue,
+		})
+	if err != nil {
+		t.Fatalf("error waiting for broker to become ready: %v", err)
+	}
+
+	err = util.WaitForServiceClassToExist(client, testServiceClassName)
+	if nil != err {
+		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
+	}
+
+	// TODO: find some way to compose scenarios; extract method here for real
+	// logic for this test.
+
+	//-----------------
+
+	instance := &v1alpha1.ServiceCatalogInstance{
+		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
+		Spec: v1alpha1.ServiceCatalogInstanceSpec{
+			ServiceClassName: testServiceClassName,
+			PlanName:         testPlanName,
+			ExternalID:       testExternalID,
+		},
+	}
+
+	if _, err := client.ServiceCatalogInstances(testNamespace).Create(instance); err != nil {
+		t.Fatalf("error creating Instance: %v", err)
+	}
+
+	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.InstanceCondition{
+		Type:   v1alpha1.InstanceConditionFailed,
+		Status: v1alpha1.ConditionTrue,
+	}); err != nil {
+		t.Fatalf("error waiting for instance to become failed: %v", err)
+	}
+
+	retInst, err := client.ServiceCatalogInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
+	}
+	if retInst.Spec.ExternalID != instance.Spec.ExternalID {
+		t.Fatalf(
+			"returned OSB GUID '%s' doesn't match original '%s'",
+			retInst.Spec.ExternalID,
+			instance.Spec.ExternalID,
+		)
+	}
 
 	err = client.ServiceCatalogInstances(testNamespace).Delete(testInstanceName, &metav1.DeleteOptions{})
 	if nil != err {
