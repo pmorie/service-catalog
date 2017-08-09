@@ -92,19 +92,19 @@ func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj 
 	}
 
 	// Clear any user-specified user info
-	instance.Spec.AlphaUser.Username = ""
-	instance.Spec.AlphaUser.UID = ""
-	instance.Spec.AlphaUser.Groups = nil
-	instance.Spec.AlphaUser.Extra = nil
+	instance.Spec.User.Username = ""
+	instance.Spec.User.UID = ""
+	instance.Spec.User.Groups = nil
+	instance.Spec.User.Extra = nil
 	// Inject user.Info from request context
 	if user, ok := genericapirequest.UserFrom(ctx); ok {
-		instance.Spec.AlphaUser.Username = user.GetName()
-		instance.Spec.AlphaUser.UID = user.GetUID()
-		instance.Spec.AlphaUser.Groups = user.GetGroups()
+		instance.Spec.User.Username = user.GetName()
+		instance.Spec.User.UID = user.GetUID()
+		instance.Spec.User.Groups = user.GetGroups()
 		if extra := user.GetExtra(); len(extra) > 0 {
-			instance.Spec.AlphaUser.Extra = map[string]sc.AlphaExtraValue{}
+			instance.Spec.User.Extra = map[string]sc.ExtraValue{}
 			for k, v := range extra {
-				instance.Spec.AlphaUser.Extra[k] = sc.AlphaExtraValue(v)
+				instance.Spec.User.Extra[k] = sc.ExtraValue(v)
 			}
 		}
 	}

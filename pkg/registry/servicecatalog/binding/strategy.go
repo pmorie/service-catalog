@@ -90,19 +90,19 @@ func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj r
 	}
 
 	// Clear any user-specified user info
-	binding.Spec.AlphaUser.Username = ""
-	binding.Spec.AlphaUser.UID = ""
-	binding.Spec.AlphaUser.Groups = nil
-	binding.Spec.AlphaUser.Extra = nil
+	binding.Spec.User.Username = ""
+	binding.Spec.User.UID = ""
+	binding.Spec.User.Groups = nil
+	binding.Spec.User.Extra = nil
 	// Inject user.Info from request context
 	if user, ok := genericapirequest.UserFrom(ctx); ok {
-		binding.Spec.AlphaUser.Username = user.GetName()
-		binding.Spec.AlphaUser.UID = user.GetUID()
-		binding.Spec.AlphaUser.Groups = user.GetGroups()
+		binding.Spec.User.Username = user.GetName()
+		binding.Spec.User.UID = user.GetUID()
+		binding.Spec.User.Groups = user.GetGroups()
 		if extra := user.GetExtra(); len(extra) > 0 {
-			binding.Spec.AlphaUser.Extra = map[string]sc.AlphaExtraValue{}
+			binding.Spec.User.Extra = map[string]sc.ExtraValue{}
 			for k, v := range extra {
-				binding.Spec.AlphaUser.Extra[k] = sc.AlphaExtraValue(v)
+				binding.Spec.User.Extra[k] = sc.ExtraValue(v)
 			}
 		}
 	}
