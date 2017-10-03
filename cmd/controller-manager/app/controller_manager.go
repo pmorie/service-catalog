@@ -326,7 +326,7 @@ func StartControllers(s *options.ControllerManagerServer,
 		serviceCatalogController, err := controller.NewController(
 			coreClient,
 			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1alpha1(),
-			serviceCatalogSharedInformers.ServiceBrokers(),
+			serviceCatalogSharedInformers.ClusterServiceBrokers(),
 			serviceCatalogSharedInformers.ServiceClasses(),
 			serviceCatalogSharedInformers.ServiceInstances(),
 			serviceCatalogSharedInformers.ServiceInstanceCredentials(),

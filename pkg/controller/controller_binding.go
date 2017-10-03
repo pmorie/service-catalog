@@ -180,7 +180,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		return fmt.Errorf("ServiceClass or ServicePlan references for Instance have not been resolved yet")
 	}
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndServiceBrokerForServiceInstanceCredential(instance, binding)
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential(instance, binding)
 	if err != nil {
 		return err // retry later
 	}
@@ -360,7 +360,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		response, err := brokerClient.Bind(request)
 		if err != nil {
 			if httpErr, ok := osb.IsHTTPError(err); ok {
-				s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q, %v",
+				s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q, %v",
 					binding.Name,
 					binding.Namespace,
 					instance.Namespace,
@@ -392,7 +392,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				return nil
 			}
 
-			s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, err)
+			s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, err)
 			glog.Warning(s)
 			c.recorder.Event(binding, apiv1.EventTypeWarning, errorBindCallReason, s)
 			c.setServiceInstanceCredentialCondition(
@@ -488,7 +488,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		}
 
 		c.recorder.Event(binding, apiv1.EventTypeNormal, successInjectedBindResultReason, successInjectedBindResultMessage)
-		glog.V(5).Infof("Successfully bound to ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		glog.V(5).Infof("Successfully bound to ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 
 		return nil
 	}
@@ -556,7 +556,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		_, err = brokerClient.Unbind(unbindRequest)
 		if err != nil {
 			if httpErr, ok := osb.IsHTTPError(err); ok {
-				s := fmt.Sprintf("Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s",
+				s := fmt.Sprintf("Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %s",
 					binding.Name,
 					binding.Namespace,
 					instance.Namespace,
@@ -586,7 +586,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				return nil
 			}
 			s := fmt.Sprintf(
-				"Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s",
+				"Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %s",
 				binding.Name,
 				binding.Namespace,
 				instance.Namespace,
@@ -645,7 +645,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		}
 
 		c.recorder.Event(binding, apiv1.EventTypeNormal, successUnboundReason, "This binding was deleted successfully")
-		glog.V(5).Infof("Successfully deleted ServiceInstanceCredential %v/%v of ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		glog.V(5).Infof("Successfully deleted ServiceInstanceCredential %v/%v of ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 	}
 
 	return nil
