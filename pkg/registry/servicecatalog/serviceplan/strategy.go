@@ -100,8 +100,9 @@ func (serviceplanRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, n
 	if !ok {
 		glog.Fatal("received a non-serviceplan object to update from")
 	}
-	// copy all fields individually?
+
 	newServiceplan.Spec.ServiceClassRef = oldServiceplan.Spec.ServiceClassRef
+	newServiceplan.Spec.ServiceBrokerName = oldServiceplan.Spec.ServiceBrokerName
 }
 
 func (serviceplanRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {

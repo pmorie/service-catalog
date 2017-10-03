@@ -33,18 +33,24 @@ import (
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for service classes
 func NewScopeStrategy() rest.NamespaceScopedStrategy {
-	return serviceclassRESTStrategies
+	return serviceClassRESTStrategies
 }
 
 // implements interfaces RESTCreateStrategy, RESTUpdateStrategy, RESTDeleteStrategy,
 // NamespaceScopedStrategy
-type serviceclassRESTStrategy struct {
+type serviceClassRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 	names.NameGenerator // GenerateName method for CreateStrategy
 }
 
+// implements interface RESTUpdateStrategy. This implementation validates updates to
+// serviceClass.Status updates only and disallows any modifications to the serviceClass.Spec.
+type serviceClassStatusRESTStrategy struct {
+	serviceClassRESTStrategy
+}
+
 var (
-	serviceclassRESTStrategies = serviceclassRESTStrategy{
+	serviceClassRESTStrategies = serviceClassRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
 
 		ObjectTyper: api.Scheme,
@@ -52,13 +58,18 @@ var (
 		// `GenerateName(base string) string`
 		NameGenerator: names.SimpleNameGenerator,
 	}
-	_ rest.RESTCreateStrategy = serviceclassRESTStrategies
-	_ rest.RESTUpdateStrategy = serviceclassRESTStrategies
-	_ rest.RESTDeleteStrategy = serviceclassRESTStrategies
+	_ rest.RESTCreateStrategy = serviceClassRESTStrategies
+	_ rest.RESTUpdateStrategy = serviceClassRESTStrategies
+	_ rest.RESTDeleteStrategy = serviceClassRESTStrategies
+
+	serviceClassStatusUpdateStrategy = serviceClassStatusRESTStrategy{
+		serviceClassRESTStrategies,
+	}
+	_ rest.RESTUpdateStrategy = serviceClassStatusUpdateStrategy
 )
 
 // Canonicalize does not transform a serviceclass.
-func (serviceclassRESTStrategy) Canonicalize(obj runtime.Object) {
+func (serviceClassRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to create")
@@ -66,12 +77,12 @@ func (serviceclassRESTStrategy) Canonicalize(obj runtime.Object) {
 }
 
 // NamespaceScoped returns false as serviceclasss are not scoped to a namespace.
-func (serviceclassRESTStrategy) NamespaceScoped() bool {
+func (serviceClassRESTStrategy) NamespaceScoped() bool {
 	return false
 }
 
 // PrepareForCreate receives the incoming Serviceclass.
-func (serviceclassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
+func (serviceClassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
 	_, ok := obj.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to create")
@@ -79,19 +90,19 @@ func (serviceclassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, 
 	// service class is a data record and has no status to track
 }
 
-func (serviceclassRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
+func (serviceClassRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateServiceClass(obj.(*sc.ServiceClass))
 }
 
-func (serviceclassRESTStrategy) AllowCreateOnUpdate() bool {
+func (serviceClassRESTStrategy) AllowCreateOnUpdate() bool {
 	return false
 }
 
-func (serviceclassRESTStrategy) AllowUnconditionalUpdate() bool {
+func (serviceClassRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (serviceclassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (serviceClassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newServiceclass, ok := new.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to update to")
@@ -104,7 +115,7 @@ func (serviceclassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, 
 	newServiceclass.Spec.ServiceBrokerName = oldServiceclass.Spec.ServiceBrokerName
 }
 
-func (serviceclassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (serviceClassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newServiceclass, ok := new.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to validate to")
@@ -115,4 +126,32 @@ func (serviceclassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, ne
 	}
 
 	return scv.ValidateServiceClassUpdate(newServiceclass, oldServiceclass)
+}
+
+func (serviceClassStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+	newServiceInstance, ok := new.(*sc.ServiceInstance)
+	if !ok {
+		glog.Fatal("received a non-serviceClass object to update to")
+	}
+	oldServiceInstance, ok := old.(*sc.ServiceInstance)
+	if !ok {
+		glog.Fatal("received a non-serviceClass object to update from")
+	}
+	// Status changes are not allowed to update spec
+	newServiceInstance.Spec = oldServiceInstance.Spec
+}
+
+func (serviceClassStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+	// newServiceInstance, ok := new.(*sc.ServiceInstance)
+	// if !ok {
+	// 	glog.Fatal("received a non-serviceClass object to validate to")
+	// }
+	// oldServiceInstance, ok := old.(*sc.ServiceInstance)
+	// if !ok {
+	// 	glog.Fatal("received a non-serviceClass object to validate from")
+	// }
+
+	// return scv.ValidateServiceClassStatusUpdate(newServiceInstance, oldServiceInstance)
+
+	return field.ErrorList{}
 }
