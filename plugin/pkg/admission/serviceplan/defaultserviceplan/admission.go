@@ -84,7 +84,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	}
 
 	// cannot find what we're trying to create an instance of
-	sc, err := d.getServiceClassByExternalName(a, instance.Spec.ExternalClusterServiceClassName)
+	sc, err := d.getClusterServiceClassByExternalName(a, instance.Spec.ExternalClusterServiceClassName)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return admission.NewForbidden(a, err)
@@ -166,9 +166,13 @@ func (d *defaultServicePlan) Validate() error {
 	return nil
 }
 
-func (d *defaultServicePlan) getServiceClassByExternalName(a admission.Attributes, scName string) (*servicecatalog.ClusterServiceClass, error) {
+func (d *defaultServicePlan) getClusterServiceClassByExternalName(a admission.Attributes, scName string) (*servicecatalog.ClusterServiceClass, error) {
 	glog.V(4).Infof("Fetching serviceclass as %q", scName)
-	listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + scName}
+	fieldSet := fields.Set{
+		"spec.externalName": scName,
+	}
+	fieldSelector := fields.SelectorFromSet(fieldSet).String()
+	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 	servicePlans, err := d.scClient.List(listOpts)
 	if err != nil {
 		glog.V(4).Infof("List failed %q", err)
@@ -181,4 +185,8 @@ func (d *defaultServicePlan) getServiceClassByExternalName(a admission.Attribute
 	msg := fmt.Sprintf("Could not find a single ServiceClass with name %q", scName)
 	glog.V(4).Info(msg)
 	return nil, admission.NewNotFound(a)
+}
+
+func (d *defaultServicePlan) getClusterServicePlansByClusterServiceClassName(scName string) ([]servicecatalog.ClusterServicePlans, error) {
+
 }
