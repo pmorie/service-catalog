@@ -195,6 +195,8 @@ func (instanceRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, o
 // currently any other mechanism in the Delete strategies for getting access to
 // the resource being deleted and the context.
 func (instanceRESTStrategy) CheckGracefulDelete(ctx genericapirequest.Context, obj runtime.Object, options *metav1.DeleteOptions) bool {
+	glog.Infof("Received DeleteOptions %+v", options)
+
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		serviceInstance, ok := obj.(*sc.ServiceInstance)
 		if !ok {
