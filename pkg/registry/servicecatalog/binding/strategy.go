@@ -225,3 +225,11 @@ func setServiceBindingUserInfo(instanceCredential *sc.ServiceBinding, ctx generi
 		}
 	}
 }
+
+// Implement CategoriesProvider
+var _ rest.CategoriesProvider = &bindingRESTStrategy{}
+
+// Categories implements the CategoriesProvider interface. Returns a list of categories a resource is part of.
+func (r *bindingRESTStrategy) Categories() []string {
+	return []string{"all"}
+}
