@@ -161,8 +161,22 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, rest.Storage) 
 	referenceStore := store
 	referenceStore.UpdateStrategy = instanceReferenceUpdateStrategy
 
-	return &store, &StatusREST{&statusStore}, &ReferenceREST{&referenceStore}
+	return &REST{&store}, &StatusREST{&statusStore}, &ReferenceREST{&referenceStore}
 
+}
+
+// REST implements a RESTStorage for ServiceInstances against etcd.
+type REST struct {
+	*registry.Store
+}
+
+// Implement CategoriesProvider
+var _ rest.CategoriesProvider = &REST{}
+
+// Categories implements the CategoriesProvider interface. Returns a list of
+// categories a resource is part of.
+func (r *REST) Categories() []string {
+	return []string{"all"}
 }
 
 // StatusREST defines the REST operations for the status subresource via

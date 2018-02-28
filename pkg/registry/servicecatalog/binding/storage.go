@@ -101,6 +101,20 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 	return labels.Set(binding.ObjectMeta.Labels), toSelectableFields(binding), binding.Initializers != nil, nil
 }
 
+// REST implements a RESTStorage for ServiceBindings against etcd.
+type REST struct {
+	*registry.Store
+}
+
+// Implement CategoriesProvider
+var _ rest.CategoriesProvider = &REST{}
+
+// Categories implements the CategoriesProvider interface. Returns a list of
+// categories a resource is part of.
+func (r *REST) Categories() []string {
+	return []string{"all"}
+}
+
 // NewStorage creates a new rest.Storage responsible for accessing ServiceBinding
 // resources
 func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
@@ -147,7 +161,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
 	statusStore := store
 	statusStore.UpdateStrategy = bindingStatusUpdateStrategy
 
-	return &store, &StatusREST{&statusStore}, nil
+	return &REST{&store}, &StatusREST{&statusStore}, nil
 }
 
 // StatusREST defines the REST operations for the status subresource via
